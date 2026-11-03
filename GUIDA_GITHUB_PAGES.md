@@ -34,6 +34,6 @@ NON mettere qui la cartella `dati/` e non caricare mai i tuoi movimenti su GitHu
 2. Apri `sw.js` e cambia `cassetto-v1` in `cassetto-v2` (poi v3, ...) così i dispositivi scaricano la nuova versione.
 3. Commit. In 1–2 minuti l'app online è aggiornata.
 
-## 6. Prossimo passo: Google Drive
+## 6. Google Drive (già incluso)
 L'indirizzo `https://TUONOME.github.io` servirà come "origine JavaScript autorizzata" nell'ID client OAuth
 di Google Cloud. Quando l'avrai attivo, ti preparo la guida per il progetto Google Cloud e il codice di sincronizzazione.

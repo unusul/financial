@@ -61,11 +61,13 @@ main{margin-left:72px;max-width:none;padding:28px 36px 40px}.wrap{max-width:1100
 <main><div class="wrap" id="v"></div></main>
 <div id="toast"></div>
 <script>
+if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
+</script>
+<script>
 const K="cassetto1";
 let S=null;
 try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
 S=S||{A:[],C:[],T:[],D:[],L:{}};S.RC=S.RC||[];S.LN=S.LN||[];
-const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){toast("Salvataggio non riuscito: spazio del browser pieno")}};
 const $=s=>document.querySelector(s);
 const P={tag:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><path d="M7 7h.01"/>',plus:'<path d="M12 5v14M5 12h14"/>',plusc:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',chart:'<path d="M5 20V11M12 20V4M19 20v-6"/>',card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',dots:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',adown:'<path d="M5 12h14"/>',aup:'<path d="M12 5v14M5 12h14"/>',swap:'<path d="M4 8h16M16 4l4 4-4 4M20 16H4M8 12l-4 4 4 4"/>',check:'<path d="M5 12l5 5 9-10"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',copy:'<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/>',chd:'<path d="M6 9l6 6 6-6"/>',chu:'<path d="M18 15l-6-6-6 6"/>',arch:'<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8M10 12h4"/>',rest:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>',dl:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',up:'<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>',merge:'<path d="M6 3v6c0 3 3 5 6 5s6-2 6-5V3M12 14v7"/>',sum:'<path d="M18 5H6l7 7-7 7h12"/>',sumoff:'<path d="M18 5H6l7 7-7 7h12"/><path d="M3 3l18 18"/>',repeat:'<path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/>',checkplus:'<path d="M3 13l4 4 8-9"/><path d="M19 4v6M16 7h6"/>'};
 const ic=(n,s)=>`<svg viewBox="0 0 24 24" width="${s||22}" height="${s||22}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
@@ -76,6 +78,59 @@ const dt=ms=>new Date(ms).toLocaleDateString("it-IT",{day:"2-digit",month:"short
 const loc=ms=>{const d=new Date(ms-new Date(ms).getTimezoneOffset()*6e4);return d.toISOString().slice(0,16)};
 const uid=()=>"n"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 let toastT;function toast(m){const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(toastT);toastT=setTimeout(()=>t.style.display="none",2400)}
+// ---- Sincronizzazione Google Drive (cartella nascosta dell'app) ----
+const GID="436912234125-5b27vc5p7f2si465as87vgmlrvfpjgls.apps.googleusercontent.com",GSC="https://www.googleapis.com/auth/drive.appdata",GF="cassetto-dati.json",GK="cassetto_gsync";
+const COLS=["A","C","T","RC","LN"];let sig={},um={};
+function snap(){sig={};um={};for(const c of COLS)for(const x of (S[c]||[])){const{u,...r}=x;sig[c+x.i]=JSON.stringify(r);um[c+x.i]=u||0}}
+function stamp(){const now=Date.now(),seen=new Set();S.G=S.G||{};
+  for(const c of COLS)for(const x of (S[c]=S[c]||[])){const k=c+x.i,{u,...r}=x,s=JSON.stringify(r);seen.add(k);
+    if(!(k in sig)){if(!x.u)x.u=now}else if(sig[k]!==s)x.u=now;else if(um[k])x.u=um[k];
+    sig[k]=s;um[k]=x.u||0}
+  for(const k in sig)if(!seen.has(k)){S.G[k]=now;delete sig[k];delete um[k]}}
+function mergeIn(R){S.G=S.G||{};const G={...(R.G||{})};for(const k in S.G)G[k]=Math.max(G[k]||0,S.G[k]);
+  for(const c of COLS){const m=new Map();for(const x of (R[c]||[]))m.set(x.i,x);
+    for(const x of (S[c]||[])){const y=m.get(x.i);if(!y||(x.u||0)>=(y.u||0))m.set(x.i,x)}
+    S[c]=[...m.values()].filter(x=>!(G[c+x.i]&&G[c+x.i]>=(x.u||0)))}
+  S.G=G;S.D=[...new Set([...(R.D||[]),...(S.D||[])])];S.M={...(R.M||{}),...(S.M||{})};S.L={...(R.L||{}),...(S.L||{})}}
+snap();
+const persist=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){toast("Salvataggio non riuscito: spazio del browser pieno")}};
+const save=()=>{stamp();persist();syncSoon()};
+let gTok=null,gExp=0,gBusy=false,gDirty=false,gMsg="",gT,gLast=0;
+function gSet(m){gMsg=m;const e=$("#sy");if(e)e.textContent=m}
+const gOn=()=>{try{return localStorage.getItem(GK)}catch(e){return null}};
+function gLoad(){return new Promise((ok,ko)=>{if(window.google&&google.accounts&&google.accounts.oauth2)return ok();const s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.onload=ok;s.onerror=()=>ko(new Error("Google non raggiungibile"));document.head.appendChild(s)})}
+function gAuth(silent){if(gTok&&Date.now()<gExp-6e4)return Promise.resolve(gTok);
+  return gLoad().then(()=>new Promise((ok,ko)=>{
+    const tm=silent?setTimeout(()=>ko(new Error("silent")),15000):0;
+    google.accounts.oauth2.initTokenClient({client_id:GID,scope:GSC,
+      callback:r=>{clearTimeout(tm);if(r.error)return ko(new Error(r.error));gTok=r.access_token;gExp=Date.now()+(+r.expires_in||3600)*1e3;ok(gTok)},
+      error_callback:e=>{clearTimeout(tm);ko(new Error(e&&e.type||"errore"))}
+    }).requestAccessToken({prompt:silent?"none":""})}))}
+async function gf(u,o){const r=await fetch(u,{...o,headers:{...(o&&o.headers),Authorization:"Bearer "+gTok}});
+  if(r.status===401){gTok=null;throw new Error("sessione scaduta")}if(!r.ok)throw new Error("Drive "+r.status);return r}
+async function gSync(silent){
+  if(gBusy){gDirty=true;return}gBusy=true;gSet("Sincronizzazione…");
+  try{await gAuth(silent);stamp();
+    const l=await(await gf("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&orderBy=createdTime&fields=files(id)&q="+encodeURIComponent("name='"+GF+"'"))).json();
+    const id=l.files&&l.files[0]&&l.files[0].id;let raw="";
+    if(id){raw=await(await gf("https://www.googleapis.com/drive/v3/files/"+id+"?alt=media")).text();
+      if(raw.trim()){const R=JSON.parse(raw);if(R&&R.T){const b=JSON.stringify(S);mergeIn(R);snap();persist();if(JSON.stringify(S)!==b)render()}}}
+    const out=JSON.stringify(S);
+    if(out!==raw){
+      if(id)await gf("https://www.googleapis.com/upload/drive/v3/files/"+id+"?uploadType=media",{method:"PATCH",headers:{"Content-Type":"application/json"},body:out});
+      else{const b="cassettoB";await gf("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+b},
+        body:"--"+b+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify({name:GF,parents:["appDataFolder"]})+"\r\n--"+b+"\r\nContent-Type: application/json\r\n\r\n"+out+"\r\n--"+b+"--"})}}
+    try{localStorage.setItem(GK,"1")}catch(e){}
+    gLast=Date.now();gSet("Sincronizzato alle "+new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}));
+  }catch(e){gSet(silent?"Tocca la nuvola per sincronizzare":"Sincronizzazione non riuscita: "+e.message)}
+  finally{gBusy=false;if(gDirty){gDirty=false;syncSoon()}}}
+function syncSoon(){if(!gOn())return;clearTimeout(gT);gT=setTimeout(()=>gSync(true),4000)}
+function gOff(){try{localStorage.removeItem(GK)}catch(e){}if(gTok&&window.google&&google.accounts)google.accounts.oauth2.revoke(gTok);gTok=null;gMsg="Non collegato";render()}
+const syncCard=()=>`<div class="card"><h2>Google Drive</h2><p class="mut" id="sy">${esc(gMsg||(gOn()?"Collegato":"Non collegato"))}</p><div style="display:flex;gap:10px">${ib("cloud","gSync(false)","Sincronizza ora")}${gOn()?ib("x","gOff()","Scollega"):""}</div></div>`;
+if(gOn())setTimeout(()=>gSync(true),1500);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&gOn()&&Date.now()-gLast>12e4)gSync(true)});
+P.cloud='<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>';
+// ---- fine sincronizzazione ----
 let cm={};const path=i=>{let p=[],c=cm[i];while(c){p.unshift(c.n);c=cm[c.p]}return p.join(" › ")};
 const topc=i=>{let c=cm[i];while(c&&c.p&&cm[c.p])c=cm[c.p];return c};
 const kind=t=>t.b?"t":t.x<0?"e":"i";
@@ -362,13 +417,14 @@ function vMore(){
   const arcSec=()=>{const A=S.C.filter(c=>c.ar),q=aqv(),sub=(p,d)=>S.C.filter(c=>c.p===p&&c.ar).sort((x,y)=>x.n.localeCompare(y.n,"it")).map(c=>`<div class="row" style="cursor:default;padding-left:${4+d*20}px;opacity:.7"><span style="flex:1">${esc(c.n)}</span></div>`+sub(c.i,d+1)).join(""),hit=c=>!q||c.n.toLowerCase().includes(q)||path(c.i).toLowerCase().includes(q)||S.C.some(y=>y.p===c.i&&y.ar&&hit(y)),l=A.filter(c=>!(c.p&&cm[c.p]&&cm[c.p].ar)&&hit(c)).sort((x,y)=>path(x.i).localeCompare(path(y.i),"it"));
     return `<h2 style="margin:18px 0 8px;font-size:15px">Archiviate (${A.length})</h2>`+(l.length?`<div class="scr">${l.map(c=>`<div class="row" style="cursor:default"><span style="flex:1">${esc(path(c.i))}</span>${ib("rest","arcC('"+c.i+"',0)","Ripristina categoria")}</div>`+sub(c.i,1)).join("")}</div>`:`<p class="mut">${A.length?"Nessuna archiviata trovata.":"Nessuna categoria archiviata."}</p>`)};
   acT=()=>'<div class="scr">'+(tree(null,0)||'<p class="mut">'+(aqv()?"Nessuna categoria trovata: premi + per crearla.":"Nessuna categoria.")+'</p>')+'</div>'+arcSec();
-  $("#v").innerHTML=`<h1>Altro</h1>${dupCard}${rcCard()}${lnCard()}${tpCard()}<div class="grid c3"><div><div class="card"><h2>Dati</h2><p class="mut">Importa il file <b>.backup</b> di Financisto: i movimenti già importati vengono aggiornati senza duplicati, e quelli creati qui restano intatti.</p>
+  $("#v").innerHTML=`<h1>Altro</h1>${dupCard}${rcCard()}${lnCard()}${tpCard()}<div class="grid c3"><div>${syncCard()}<div class="card"><h2>Dati</h2><p class="mut">Importa il file <b>.backup</b> di Financisto: i movimenti già importati vengono aggiornati senza duplicati, e quelli creati qui restano intatti.</p>
   <div style="display:flex;gap:10px"><label class="fb" title="Importa backup" aria-label="Importa backup">${ic("up")}<input type="file" id="fi"></label>${ib("dl","exp()","Esporta tutto (JSON)")}</div><p class="mut" id="fm"></p></div>
   <div class="card"><h2>Tema</h2><select id="th" onchange="th(this.value)"><option value="">Automatico</option><option value="light">Chiaro</option><option value="dark">Scuro</option></select></div></div>
   <div class="card"><h2>Categorie</h2><div class="cr" style="margin:4px 0 8px"><input id="ac-q" placeholder="Filtra o aggiungi categoria" oninput="acRun()" value="${esc(aqr)}" autocomplete="off" style="flex:1;min-width:0"><button class="b g cx" title="Aggiungi categoria" aria-label="Aggiungi categoria" onclick="acAdd()">${ic("plus",18)}</button></div>${addP===""?addCRow(0):""}<div id="ac-tree">${acT()}</div></div>${modCard()}</div>`;
   $("#fi").onchange=e=>{const f=e.target.files[0];e.target.value="";imp(f)};if(addP!==null&&$("#nc")){$("#nc").focus();$("#nc").select()}else if(tcv&&$("#tc-n")){$("#tc-n").focus();$("#tc-n").select()}
 }
 const MODIFICHE=[
+  ["03/11/2026","Altro › Google Drive","Sincronizzazione tra dispositivi: accedi con Google e i dati vengono uniti con quelli salvati nella cartella nascosta dell’app su Drive (nessun altro tuo file è visibile all’app). Ogni elemento ha ora una data di modifica e le eliminazioni sono registrate, così PC e cellulare si uniscono senza perdere modifiche. Si sincronizza da sola dopo ogni salvataggio, all’apertura e quando torni sull’app; se Google chiede di nuovo l’accesso, tocca la nuvola."],
   ["03/11/2026","Report","Colonne Spese ed Entrate allineate in tutte le righe della tabella “Per categoria”: ogni riga è una tabella a sé, quindi ora le larghezze delle colonne sono fisse (40% nome, 52 px pulsante, il resto diviso tra Spese ed Entrate)."],
   ["03/11/2026","Movimenti","Il filtro “Come nel report” si chiama ora “report”. Si attiva quando apri una categoria dal Report e nasconde giroconti e movimenti dei conti esclusi dai totali, così la somma torna con quella del Report."],
   ["03/11/2026","Altro","Aggiunta questa sezione “Modifiche fatte”, che elenca le modifiche all’app e resta nel file HTML se lo esporti."]
@@ -407,9 +463,6 @@ async function imp(f){
   }catch(e){m.textContent="Importazione non riuscita: "+e.message}
 }
 render();
-</script>
-<script>
-if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
 </script>
 </body>
 </html>
