@@ -70,10 +70,12 @@ try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
 S=S||{A:[],C:[],T:[],D:[],L:{}};S.RC=S.RC||[];S.LN=S.LN||[];
 const $=s=>document.querySelector(s);
 const P={tag:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><path d="M7 7h.01"/>',plus:'<path d="M12 5v14M5 12h14"/>',plusc:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',chart:'<path d="M5 20V11M12 20V4M19 20v-6"/>',card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',dots:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',adown:'<path d="M5 12h14"/>',aup:'<path d="M12 5v14M5 12h14"/>',swap:'<path d="M4 8h16M16 4l4 4-4 4M20 16H4M8 12l-4 4 4 4"/>',check:'<path d="M5 12l5 5 9-10"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',copy:'<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/>',chd:'<path d="M6 9l6 6 6-6"/>',chu:'<path d="M18 15l-6-6-6 6"/>',arch:'<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8M10 12h4"/>',rest:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>',dl:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',up:'<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>',merge:'<path d="M6 3v6c0 3 3 5 6 5s6-2 6-5V3M12 14v7"/>',sum:'<path d="M18 5H6l7 7-7 7h12"/>',sumoff:'<path d="M18 5H6l7 7-7 7h12"/><path d="M3 3l18 18"/>',repeat:'<path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/>',checkplus:'<path d="M3 13l4 4 8-9"/><path d="M19 4v6M16 7h6"/>'};
+P.eye='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>';P.eyeoff='<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/>';
 const ic=(n,s)=>`<svg viewBox="0 0 24 24" width="${s||22}" height="${s||22}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
 const ib=(n,f,t,c)=>`<button class="b ${c||"g"} ic" title="${t}" aria-label="${t}" onclick="${f}">${ic(n)}</button>`;
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const eur=c=>(c/100).toLocaleString("it-IT",{style:"currency",currency:"EUR"});
+let PV=false;try{PV=localStorage.getItem("cassetto_pv")==="1"}catch(e){} // modalità privacy: nasconde tutti gli importi
+const eur=c=>PV?"••••":(c/100).toLocaleString("it-IT",{style:"currency",currency:"EUR"});
 const dt=ms=>new Date(ms).toLocaleDateString("it-IT",{day:"2-digit",month:"short",year:"numeric"});
 const loc=ms=>{const d=new Date(ms-new Date(ms).getTimezoneOffset()*6e4);return d.toISOString().slice(0,16)};
 const uid=()=>"n"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
@@ -267,9 +269,9 @@ function arcC(i,v){const br=x=>[x].concat(...S.C.filter(c=>c.p===x).map(c=>br(c.
   S.C.forEach(c=>{if(ids.includes(c.i)){if(v)c.ar=true;else delete c.ar}});save();
   toast(v?(ids.length>1?"Archiviate "+ids.length+" categorie":"Categoria archiviata"):(ids.length>1?"Ripristinate "+ids.length+" categorie":"Categoria ripristinata"));render()}
 let lt=null;
-function render(){const y0=window.scrollY;
+function render(){const y0=window.scrollY;pvApply();
   cm={};S.C.forEach(c=>cm[c.i]=c);
-  $("#nav").innerHTML=tabs.map(([k,n,i])=>`<button class="${k===tab?"on":""}" title="${n}" aria-label="${n}" onclick="go('${k}')">${ic(i,24)}</button>`).join("");
+  $("#nav").innerHTML=tabs.map(([k,n,i])=>`<button class="${k===tab?"on":""}" title="${n}" aria-label="${n}" onclick="go('${k}')">${ic(i,24)}</button>`).join("")+`<button title="${PV?"Mostra i valori":"Nascondi i valori"}" aria-label="${PV?"Mostra i valori":"Nascondi i valori"}"${PV?` style="color:var(--acc)"`:""} onclick="pvTog()">${ic(PV?"eyeoff":"eye",24)}</button>`;
   ch.forEach(c=>c.destroy());ch=[];
   ({home:vHome,add:vAdd,list:vList,rep:vRep,acc:vAcc,more:vMore})[tab]();
   if(tab==="acc")ptDraw();
@@ -435,7 +437,7 @@ function vRep(){
 /* ---------- Conti ---------- */
 function vAcc(){
   const on=sortedAcc(),off=S.A.filter(a=>!a.on),tot=S.A.filter(a=>a.tot&&a.on).reduce((s,a)=>s+bal(a.i),0),nx=S.A.filter(a=>!a.tot&&a.on).length,ex=S.A.filter(a=>!a.tot&&a.on).reduce((s,a)=>s+bal(a.i),0);
-  const li=a=>`<div class="row" style="cursor:default"><input value="${esc(a.n)}" onchange="ren('A','${a.i}',this.value)" style="flex:1"><span class="r ${bal(a.i)<0?"neg":""}" style="min-width:96px;cursor:pointer;text-decoration:underline dotted" title="Tocca per riconciliare il saldo" onclick="rcSrc='${a.i}';render()">${eur(bal(a.i))}</span>${ib(a.tot?"sum":"sumoff","togT('"+a.i+"')",a.tot?"Incluso nei totali: tocca per escludere":"Escluso dai totali: tocca per includere",a.tot?"p":"g")}${ib(a.on?"arch":"rest","togA('"+a.i+"')",a.on?"Archivia":"Riattiva")}</div>`+(rcSrc===a.i?`<div class="row" style="cursor:default"><span class="mut">Saldo reale:</span><input id="rc-v" inputmode="decimal" placeholder="${(bal(a.i)/100).toFixed(2).replace(".",",")}" style="flex:1">${ib("check","doRec()","Conferma","p")}${ib("x","rcSrc=null;render()","Annulla")}</div>`:"");
+  const li=a=>`<div class="row" style="cursor:default"><input value="${esc(a.n)}" onchange="ren('A','${a.i}',this.value)" style="flex:1"><span class="r ${bal(a.i)<0?"neg":""}" style="min-width:96px;cursor:pointer;text-decoration:underline dotted" title="Tocca per riconciliare il saldo" onclick="rcSrc='${a.i}';render()">${eur(bal(a.i))}</span>${ib(a.tot?"sum":"sumoff","togT('"+a.i+"')",a.tot?"Incluso nei totali: tocca per escludere":"Escluso dai totali: tocca per includere",a.tot?"p":"g")}${ib(a.on?"arch":"rest","togA('"+a.i+"')",a.on?"Archivia":"Riattiva")}</div>`+(rcSrc===a.i?`<div class="row" style="cursor:default"><span class="mut">Saldo reale:</span><input id="rc-v" inputmode="decimal" placeholder="${PV?"":(bal(a.i)/100).toFixed(2).replace(".",",")}" style="flex:1">${ib("check","doRec()","Conferma","p")}${ib("x","rcSrc=null;render()","Annulla")}</div>`:"");
   $("#v").innerHTML=`<h1>Conti</h1><div class="card"><div class="sum"><span>Totale (conti inclusi nei totali)</span><b>${eur(tot)}</b></div>${nx?`<div class="sum"><span class="mut">Fuori dai totali (${nx})</span><b class="mut">${eur(ex)}</b></div>`:""}<p class="mut">Il simbolo Σ pieno indica un conto incluso nei totali, quello barrato un conto escluso. Vale anche per i report.</p>${on.map(li).join("")||'<p class="mut">Nessun conto.</p>'}</div>
   ${ptCard()}<div class="card"><h2>Nuovo conto</h2><div class="two"><input id="na" placeholder="Nome, ad esempio Cassa"><select id="nt"><option>CASH</option><option>BANK</option><option>CREDIT_CARD</option><option>ELECTRONIC</option><option>OTHER</option></select></div><p>${ib("plus","addA()","Aggiungi conto","p")}</p></div>
   ${off.length?`<div class="card"><h2>Archiviati</h2>${off.map(li).join("")}</div>`:""}`;
@@ -466,6 +468,11 @@ function th(v){if(v)document.documentElement.dataset.theme=v;else delete documen
 function addC(){const n=$("#nc").value.trim();if(!n||addP===null)return;if(S.C.some(x=>(x.p||null)===(addP||null)&&x.n.toLowerCase()===n.toLowerCase())){toast("Esiste già");return}S.C.push({i:uid(),n,p:addP||null});if(!addP)aqr="";addP=null;save();render()}
 function delC(i){const used=S.T.some(t=>t.c===i),kid=S.C.some(c=>c.p===i);if(used||kid){toast("Impossibile: categoria in uso o con sottocategorie");return}S.C=S.C.filter(c=>c.i!==i);save();render()}
 function delDup(i){S.T=S.T.filter(x=>x.i!==i);S.D.push(i);save();toast("Eliminato");render()}
+/* ---------- Privacy: nasconde importi, assi e tooltip dei grafici ---------- */
+function pvApply(){if(!window.Chart||!Chart.defaults)return;const d=Chart.defaults;
+  if(d.scales&&d.scales.linear&&d.scales.linear.ticks){if(!pvApply.o)pvApply.o=d.scales.linear.ticks.callback;d.scales.linear.ticks.callback=PV?()=>"":pvApply.o}
+  if(d.plugins&&d.plugins.tooltip)d.plugins.tooltip.enabled=!PV}
+function pvTog(){PV=!PV;try{localStorage.setItem("cassetto_pv",PV?"1":"0")}catch(e){}toast(PV?"Valori nascosti":"Valori visibili");render()}
 /* ---------- Dati: migrazione, JSON, CSV, cancellazione ---------- */
 let dm=null; // conferma in corso: {k:"json",j,name} oppure {k:"del"}
 const nTot=o=>`${(o.A||[]).length} conti, ${(o.C||[]).length} categorie, ${(o.T||[]).length} movimenti`;
