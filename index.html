@@ -150,7 +150,7 @@ const unz=z=>pako.ungzip(Uint8Array.from(atob(z),c=>c.charCodeAt(0)),{to:"string
 const fbRead=async()=>{const z=await fbF();return z?unz(z):""};
 const fbWrite=out=>fbF({method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(zip(out))});
 // ---- archivio scelto: Google Drive o Firebase (uno solo alla volta) ----
-const gMode=()=>gOn()==="fb"?"fb":"drive",gName=()=>gMode()==="fb"?"Firebase":"Google Drive";
+const gMode=()=>gOn()==="fb"?"fb":"drive",gName=()=>gMode()==="fb"?"Firebase":"Google Drive",gIc=()=>gMode()==="fb"?"db":"cloud";
 const gCan=()=>gMode()==="fb"?!!(fbS&&fbS.r):gValid(); // sincronizzabile senza finestre di Google
 async function gSync(silent,m){
   if(gBusy){gDirty=true;return}gBusy=true;gSet("Sincronizzazione…");m=m||gMode();const fb=m==="fb";
@@ -167,7 +167,7 @@ async function gSync(silent,m){
 function syncSoon(){if(!gOn())return;clearTimeout(gT);gT=setTimeout(()=>gSync(true),4000)}
 function gOff(){try{localStorage.removeItem(GK);localStorage.removeItem(GT)}catch(e){}if(gTok&&window.google&&google.accounts)google.accounts.oauth2.revoke(gTok);gTok=null;fbS=null;fbSave();gMsg="Non collegato";render()}
 const syncCard=()=>`<div class="card"><h2>Sincronizzazione</h2><p class="mut" id="sy">${esc(gMsg||(gOn()?gName()+" collegato":"Non collegato"))}</p><div style="display:flex;gap:10px">${gOn()
-  ?ib(gMode()==="fb"?"db":"cloud","gSync(false)","Sincronizza ora")+ib("x","gOff()","Scollega "+gName())
+  ?ib(gIc(),"gSync(false)","Sincronizza ora")+ib("x","gOff()","Scollega "+gName())
   :ib("cloud","gSync(false,'drive')","Collega Google Drive")+(fbOk()?ib("db","gSync(false,'fb')","Collega Firebase"):"")}</div></div>`;
 gTokLoad();if(gOn())setTimeout(()=>gSync(true),1500);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&gOn()&&gCan()&&Date.now()-gLast>12e4)gSync(true)});
@@ -330,7 +330,7 @@ function vHome(){
   ${ordEdit?`<p class="mut" style="margin:0 0 10px">Come in Financisto, il numero più alto va più in alto. Cambia il numero oppure usa le frecce.</p>`:""}
   <div class="card">${l.map(row).join("")||'<p class="mut">Nessun conto. Importa il backup da Altro o crea un conto in Conti.</p>'}</div>
   <div class="card"><div class="sum" style="border:0;padding:4px 0"><span>Totale<small>Conti inclusi nei totali</small></span><b class="${tot<0?"neg":"pos"}" style="font-size:22px">${eur(tot)}</b></div></div>
-  ${gOn()?`<div class="card" style="display:flex;align-items:center;gap:10px"><span class="mut" id="sy2" style="flex:1">${esc(gMsg||gName()+" collegato")}</span>${ib("cloud","gSync(false)","Sincronizza ora")}</div>`:""}`;
+  ${gOn()?`<div class="card" style="display:flex;align-items:center;gap:10px"><span class="mut" id="sy2" style="flex:1">${esc(gMsg||gName()+" collegato")}</span>${ib(gIc(),"gSync(false)","Sincronizza ora")}</div>`:""}`;
 }
 function goAcc(i){F.a=i;F.m="";F.y="";F.q="";F.c=null;F.cl="";F.ids=null;F.rep=false;F.n=100;tab="list";render()}
 
