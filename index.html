@@ -318,7 +318,7 @@ function vAdd(){
   <label>Nota</label><input id="f-n" value="${esc(t?t.n:pr?pr.n:"")}" autocomplete="off">
   <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><button class="b ic" style="flex:1;width:auto" title="${t?"Salva modifiche":"Aggiungi"}" aria-label="${t?"Salva modifiche":"Aggiungi"}" onclick="saveTx()">${ic("check",24)}</button>${t?"":`<button class="b g ic" style="flex:1;width:auto" title="Salva e nuovo" aria-label="Salva e nuovo" onclick="saveTx(1)">${ic("checkplus",24)}</button>`}${t?ib("x","editId=null;tab='list';render()","Annulla")+ib("repeat","mkRc()","Rendi ricorrente (ogni mese)")+ib("trash","delTx()","Elimina","d"):""}</div></div></div>
   </div>`;
-  if(!t)setTimeout(()=>$("#f-amt").focus(),50);
+  if(!t&&window.matchMedia&&matchMedia("(pointer:fine)").matches)setTimeout(()=>$("#f-amt").focus(),50); // niente focus sul telefono: non apre la tastiera da sola
 }
 function segset(){
   document.querySelectorAll("#seg button").forEach((b,i)=>b.classList.toggle("on","eit"[i]===ek));
