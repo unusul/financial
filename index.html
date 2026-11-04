@@ -391,7 +391,7 @@ function vRep(){
   const ym=t=>loc(t.d).slice(0,7),yrs=[...new Set(T.map(t=>ym(t).slice(0,4)).concat(R.y))].sort().reverse();
   const per=t=>R.sc==="a"||(R.sc==="y"?ym(t).slice(0,4)===R.y:ym(t)===R.m);
   const flt=R.sc==="m"?`<label>Mese</label>${mpick("rm",R.m)}`:R.sc==="y"?`<label>Anno</label><select id="ry">${yrs.map(y=>`<option${y===R.y?" selected":""}>${y}</option>`).join("")}</select>`:"";
-  $("#v").innerHTML=`<h1>Report</h1><div class="card two"><div><label>Periodo</label><select id="rs">${[["m","mese"],["y","anno"],["a","tutto"]].map(([k,n])=>`<option value="${k}"${R.sc===k?" selected":""}>${n}</option>`).join("")}</select></div><div>${flt}</div></div>
+  $("#v").innerHTML=`<h1>Report</h1><div class="card two"><div><label>Periodo</label><select id="rs">${[["m","mese"],["y","anno"],["a","tutto"]].map(([k,n])=>`<option value="${k}"${R.sc===k?" selected":""}>${n}</option>`).join("")}</select></div><div>${flt}</div><p class="mut" id="rper" style="grid-column:1/-1;margin:0"></p></div>
   <div class="grid c3"><div class="card"><h2>${{m:"Ultimi 12 mesi",y:"Mesi dell’anno",a:"Anni"}[R.sc]}</h2><div class="cv"><canvas id="c1"></canvas></div></div><div class="card"><h2>Spese per categoria</h2><div class="cv"><canvas id="c2"></canvas></div></div></div><div class="grid c3"><div class="card" id="ri"></div><div class="card" id="rcmp"></div></div><div class="card" id="rtop"></div><div class="card" id="rt"></div>`;
   $("#rs").onchange=e=>{R.sc=e.target.value;render()};
   if($("#rm"))$("#rm").onchange=()=>{R.m=mval("rm")||R.m;render()};
@@ -419,6 +419,11 @@ function vRep(){
   if(R.sc==="m"){const [y1,m1]=R.m.split("-").map(Number);nd=cutM?tn:new Date(y1,m1,0).getDate()}
   else if(R.sc==="y"){const y1=+R.y;nd=cutY?Math.round((new Date(tdy.getFullYear(),tm-1,tn)-new Date(y1,0,1))/864e5)+1:Math.round((new Date(y1+1,0,1)-new Date(y1,0,1))/864e5)}
   else nd=D.length?Math.max(1,Math.round((Date.now()-D.reduce((m,t)=>Math.min(m,t.d),Infinity))/864e5)+1):1;
+  {const f=d=>new Date(d).toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric"}),td=Date.now();let a0,a1;
+    if(R.sc==="m"){const [y1,m1]=R.m.split("-").map(Number);a0=new Date(y1,m1-1,1);a1=cutM?td:new Date(y1,m1,0)}
+    else if(R.sc==="y"){a0=new Date(+R.y,0,1);a1=cutY?td:new Date(+R.y,11,31)}
+    else{a0=D.length?D.reduce((m,t)=>Math.min(m,t.d),Infinity):td;a1=td}
+    const e=$("#rper");if(e)e.textContent="Dal "+f(a0)+" al "+f(a1)+" · "+nd+(nd===1?" giorno":" giorni")+(nd>=365?" (circa "+((y)=>y==="1,0"?"1 anno":y+" anni")((nd/365.25).toFixed(1).replace(".",","))+")":"")}
   const dk=t=>{const o=new Date(t.d);return (o.getMonth()+1)*100+o.getDate()};
   // Spese fisse (12 mesi che finiscono col periodo, al massimo 1,5 volte al mese in media): stesso conto, categoria e importo (all’euro) in almeno 6 mesi, oppure stesso conto e categoria in almeno 9 mesi; oppure movimenti nati da una ricorrenza
   const wEnd=(()=>{let e;if(R.sc==="m"){const [y1,m1]=R.m.split("-").map(Number);e=new Date(y1,m1,1).getTime()}else if(R.sc==="y")e=new Date(+R.y+1,0,1).getTime();else e=Date.now();return Math.min(e,Date.now()+864e5)})(),wSt=wEnd-366*864e5;
