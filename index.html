@@ -414,11 +414,48 @@ function vRep(){
   if(R.sc==="m"&&R.m===cur){const now=new Date(),dd=now.getDate();let rem=0;for(let k=1;k<=3;k++){const key=mk(new Date(now.getFullYear(),now.getMonth()-k,1).getTime());rem+=T.filter(t=>ym(t)===key&&t.x<0&&new Date(t.d).getDate()>dd).reduce((s,t)=>s-t.x,0)}proj=te+rem/3}
   const ir=(l,d,v,c)=>`<div class="sum"><span>${l}<small>${d}</small></span><b${c?` class="${c}"`:""}>${v}</b></div>`;
   const tdy=new Date(),tn=tdy.getDate(),tm=tdy.getMonth()+1,cutM=R.sc==="m"&&R.m===cur,cutY=R.sc==="y"&&R.y===cur.slice(0,4),live=cutM||cutY;
+  const dim=new Date(tdy.getFullYear(),tdy.getMonth()+1,0).getDate();
+  let nd;
+  if(R.sc==="m"){const [y1,m1]=R.m.split("-").map(Number);nd=cutM?tn:new Date(y1,m1,0).getDate()}
+  else if(R.sc==="y"){const y1=+R.y;nd=cutY?Math.round((new Date(tdy.getFullYear(),tm-1,tn)-new Date(y1,0,1))/864e5)+1:Math.round((new Date(y1+1,0,1)-new Date(y1,0,1))/864e5)}
+  else nd=D.length?Math.max(1,Math.round((Date.now()-D.reduce((m,t)=>Math.min(m,t.d),Infinity))/864e5)+1):1;
+  const dk=t=>{const o=new Date(t.d);return (o.getMonth()+1)*100+o.getDate()};
+  // Spese fisse (12 mesi che finiscono col periodo, al massimo 1,5 volte al mese in media): stesso conto, categoria e importo (all’euro) in almeno 6 mesi, oppure stesso conto e categoria in almeno 9 mesi; oppure movimenti nati da una ricorrenza
+  const wEnd=(()=>{let e;if(R.sc==="m"){const [y1,m1]=R.m.split("-").map(Number);e=new Date(y1,m1,1).getTime()}else if(R.sc==="y")e=new Date(+R.y+1,0,1).getTime();else e=Date.now();return Math.min(e,Date.now()+864e5)})(),wSt=wEnd-366*864e5;
+  const fx=(()=>{const K2=t=>t.a+"|"+(t.c||""),K=t=>K2(t)+"|"+Math.round(-t.x/100),M={},M2={},add=(o,k,t)=>{const e=o[k]||(o[k]={ms:new Set(),n:0});e.ms.add(ym(t));e.n++};
+    T.forEach(t=>{if(t.x>=0||t.d<wSt||t.d>=wEnd)return;add(M,K(t),t);add(M2,K2(t),t)});
+    const ok=(o,m)=>new Set(Object.keys(o).filter(k=>o[k].ms.size>=m&&o[k].n/o[k].ms.size<=1.5)),F=ok(M,6),F2=ok(M2,9);return t=>!!t.rc||F.has(K(t))||F2.has(K2(t))})();
+  const ef=R.sc==="a"?0:D.filter(t=>t.x<0&&fx(t)).reduce((s,t)=>s-t.x,0),pc=v=>te>0?Math.round(v/te*100)+"% delle spese":"–";
+  // Categoria in crescita: la categoria principale che spende di più rispetto al solito
+  const gw=(()=>{if(R.sc==="a")return"";let pk2,dv=1,lb;
+    if(R.sc==="m"){const [y1,m1]=R.m.split("-").map(Number),k3=[1,2,3].map(k=>mk(new Date(y1,m1-1-k,1).getTime()));pk2=t=>k3.includes(ym(t))&&(!cutM||new Date(t.d).getDate()<=tn);dv=k3.filter(k=>T.some(t=>ym(t)===k)).length;lb="in media nei 3 mesi precedenti"+(cutM?" (stessi giorni)":"")}
+    else{const y0=String(+R.y-1);pk2=t=>ym(t).slice(0,4)===y0&&(!cutY||dk(t)<=tm*100+tn);lb="l’anno scorso"+(cutY?" nello stesso periodo":"")}
+    if(!dv)return"";const ct=t=>{const c=t.c&&topc(t.c);return c?c:{i:"-",n:"no categoria"}},A={},B={};
+    D.forEach(t=>{if(t.x<0){const c=ct(t);(A[c.i]=A[c.i]||{n:c.n,v:0}).v-=t.x}});T.filter(pk2).forEach(t=>{if(t.x<0){const c=ct(t);(B[c.i]=B[c.i]||{n:c.n,v:0}).v-=t.x}});
+    let bs=null;Object.keys(A).forEach(k=>{const vc=A[k].v,bv=((B[k]||{}).v||0)/dv,dl=vc-bv;if(dl>0&&(!bs||dl>bs.dl))bs={n:A[k].n,vc,bv,dl}});
+    return bs?ir("Categoria in crescita",esc(bs.n)+": "+eur(bs.vc)+" ora, "+eur(bs.bv)+" "+lb,"+"+eur(bs.dl),"neg"):ir("Categoria in crescita","Nessuna categoria spende più del solito","–")})();
+  // Altri indicatori
+  const au=!(live||R.sc==="a")?"":(()=>{const tot=S.A.filter(a=>a.tot&&a.on).reduce((s,a)=>s+bal(a.i),0),st12=Date.now()-365*864e5,L12=T.filter(t=>t.x<0&&t.d>=st12);if(tot<=0||!L12.length)return"";
+    const old=L12.reduce((m,t)=>Math.min(m,t.d),Infinity),mo=Math.max(1,Math.min(12,Math.round((Date.now()-old)/(30.44*864e5)))),av=L12.reduce((s,t)=>s-t.x,0)/mo;
+    return av>0?ir("Mesi di autonomia","Patrimonio dei conti inclusi diviso la spesa media mensile degli ultimi 12 mesi ("+eur(av)+"). Ha senso se i saldi sono aggiornati",(tot/av).toFixed(1).replace(".",",")+" mesi"):""})();
+  const tp=E.length>3&&te>0?ir("Peso delle prime 3 categorie","Quota delle spese in: "+esc(E.slice(0,3).map(x=>x.n).join(", ")),Math.round(E.slice(0,3).reduce((s,x)=>s+x.e,0)/te*100)+"%"):"";
+  const xs=R.sc==="a"?"":(()=>{const tk=t=>{const c=t.c&&topc(t.c);return c?c.i:"-"},Lf={},Lt={};
+    T.forEach(t=>{if(t.x<0&&t.d>=wSt&&t.d<wEnd){(Lf[t.c||"-"]=Lf[t.c||"-"]||[]).push(-t.x);(Lt[tk(t)]=Lt[tk(t)]||[]).push(-t.x)}});
+    const mk3=L=>{const o={};Object.keys(L).forEach(k=>{if(L[k].length>=5){const a=L[k].slice().sort((p,q)=>p-q);o[k]=Math.max(15000,3*a[a.length>>1])}});return o},tf=mk3(Lf),tt=mk3(Lt),th=t=>tf[t.c||"-"]!=null?tf[t.c||"-"]:tt[tk(t)];
+    const hi=D.filter(t=>t.x<0&&th(t)!=null&&-t.x>th(t)&&!fx(t)),sx=hi.reduce((s,t)=>s-t.x,0);
+    return hi.length?ir("Spese straordinarie",hi.length+(hi.length===1?" spesa":" spese")+" molto sopra il solito per la loro categoria (almeno 3 volte la mediana e non meno di 150 €), escluse le spese fisse: "+pc(sx),eur(sx)):ir("Spese straordinarie","Nessuna spesa molto sopra il solito per la propria categoria","–")})();
+  const gs=R.sc==="a"?"":(()=>{const ds=new Set(D.filter(t=>t.x<0).map(t=>loc(t.d).slice(0,10)));return ir("Giorni senza spese","Giorni del periodo in cui non hai registrato nessuna spesa",Math.max(0,nd-ds.size)+" su "+nd)})();
+  const mp=(()=>{const nt={};T.forEach(t=>{const k=ym(t);nt[k]=(nt[k]||0)+t.x});const ms=(R.sc==="a"?Object.keys(nt):sel).filter(k=>k<cur&&k in nt);
+    return ms.length?ir("Mesi chiusi in positivo","Mesi in cui le entrate hanno superato le spese, "+(R.sc==="m"?"tra i 12 del grafico (senza il mese in corso)":R.sc==="y"?"tra i mesi chiusi dell’anno":"tra tutti i mesi chiusi"),ms.filter(k=>nt[k]>0).length+" su "+ms.length):""})();
+  const ox=[au,tp,xs,gs,mp].join("")?`<h2 style="margin-top:18px;font-size:15px">Altri indicatori</h2>`+au+tp+xs+gs+mp:"";
+  const ix=ir("Spesa media al giorno","Spese del periodo divise per "+nd+(nd===1?" giorno":" giorni"),eur(te/nd))
+    +(cutM&&ti-te>0&&dim-tn>0?ir("Puoi spendere al giorno","Per chiudere il mese in pari: entrate meno spese diviso i "+(dim-tn)+(dim-tn===1?" giorno":" giorni")+" che restano",eur((ti-te)/(dim-tn)),"pos"):"")
+    +(R.sc!=="a"&&te>0?ir("Spese fisse","Si ripetono ogni mese (stesso importo, o stessa categoria quasi tutti i mesi) o sono ricorrenze: "+pc(ef),eur(ef))+ir("Spese variabili","Tutto il resto delle spese: "+pc(te-ef),eur(te-ef)):"")+gw+ox;
   $("#ri").innerHTML=`<h2>Indicatori</h2>${live?`<p class="mut">${cutM?"Il mese è in corso (giorno "+tn+" di "+new Date(tdy.getFullYear(),tdy.getMonth()+1,0).getDate()+")":"L’anno è in corso"}: i valori sono parziali.</p>`:""}`
     +ir("Entrate meno spese","Quanto ti è rimasto nel periodo",eur(ti-te),ti-te<0?"neg":"pos")
     +ir("Tasso di risparmio","Quota delle entrate che non hai speso. Negativo: hai speso più di quanto hai incassato",ti>0?((ti-te)/ti<-1?"sotto -100%":Math.round((ti-te)/ti*100)+"%"):"–")
     +(R.sc==="m"?"":ir("Spesa media al mese","Spese del periodo divise per "+n+" mesi",eur(te/n))+ir("Entrata media al mese","Entrate del periodo divise per "+n+" mesi",eur(ti/n)))
-    +(proj!=null?ir("Spese già sostenute","Dall’inizio del mese a oggi",eur(te))+ir("Ancora previste","Media delle spese che nei 3 mesi precedenti sono arrivate dopo il giorno "+tn,eur(proj-te))+ir("Spese previste a fine mese","Somma delle due voci sopra",eur(proj)):"");
+    +(proj!=null?ir("Spese già sostenute","Dall’inizio del mese a oggi",eur(te))+ir("Ancora previste","Media delle spese che nei 3 mesi precedenti sono arrivate dopo il giorno "+tn,eur(proj-te))+ir("Spese previste a fine mese","Somma delle due voci sopra",eur(proj)):"")+ix;
   const md=t=>{const o=new Date(t.d);return (o.getMonth()+1)*100+o.getDate()};
   let pk=null,pl="",ps="",cn="";
   if(R.sc==="y"){const y0=String(+R.y-1);pk=t=>ym(t).slice(0,4)===y0&&(!cutY||md(t)<=tm*100+tn);pl=y0;ps=y0;cn=R.y}
