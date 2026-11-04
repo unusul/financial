@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Cassetto – le mie finanze</title>
+<title>Financial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -52,7 +52,7 @@ main{margin-left:72px;max-width:none;padding:28px 36px 40px}.wrap{max-width:1100
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f766e">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Cassetto">
+<meta name="apple-mobile-web-app-title" content="Financial">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" href="icons/icon-192.png">
 </head>
@@ -87,7 +87,11 @@ function stamp(){const now=Date.now(),seen=new Set();S.G=S.G||{};
     if(!(k in sig)){if(!x.u)x.u=now}else if(sig[k]!==s)x.u=now;else if(um[k])x.u=um[k];
     sig[k]=s;um[k]=x.u||0}
   for(const k in sig)if(!seen.has(k)){S.G[k]=now;delete sig[k];delete um[k]}}
-function mergeIn(R){S.G=S.G||{};const G={...(R.G||{})};for(const k in S.G)G[k]=Math.max(G[k]||0,S.G[k]);
+function mergeIn(R){
+  const re=R.E||0,le=S.E||0; // E = istante di una sostituzione totale (importa JSON / cancella dati): vince sempre l'epoca più recente
+  if(re>le){try{localStorage.setItem(K+"_prev",JSON.stringify(S))}catch(e){}S={...NEWS(),...R};return}
+  if(le>re)return;
+  S.G=S.G||{};const G={...(R.G||{})};for(const k in S.G)G[k]=Math.max(G[k]||0,S.G[k]);
   for(const c of COLS){const m=new Map();for(const x of (R[c]||[]))m.set(x.i,x);
     for(const x of (S[c]||[])){const y=m.get(x.i);if(!y||(x.u||0)>=(y.u||0))m.set(x.i,x)}
     S[c]=[...m.values()].filter(x=>!(G[c+x.i]&&G[c+x.i]>=(x.u||0)))}
@@ -96,18 +100,21 @@ snap();
 const persist=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){toast("Salvataggio non riuscito: spazio del browser pieno")}};
 const save=()=>{stamp();persist();syncSoon()};
 let gTok=null,gExp=0,gBusy=false,gDirty=false,gMsg="",gT,gLast=0;
-function gSet(m){gMsg=m;const e=$("#sy");if(e)e.textContent=m}
+const GT="cassetto_gtok",gValid=()=>!!gTok&&Date.now()<gExp-6e4;
+function gTokLoad(){try{const o=JSON.parse(localStorage.getItem(GT)||"null");if(o&&o.t&&o.e>Date.now()+6e4){gTok=o.t;gExp=o.e}}catch(e){}}
+function gTokSave(){try{localStorage.setItem(GT,JSON.stringify({t:gTok,e:gExp}))}catch(e){}}
+function gSet(m){gMsg=m;for(const s of ["#sy","#sy2"]){const e=$(s);if(e)e.textContent=m}}
 const gOn=()=>{try{return localStorage.getItem(GK)}catch(e){return null}};
 function gLoad(){return new Promise((ok,ko)=>{if(window.google&&google.accounts&&google.accounts.oauth2)return ok();const s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.onload=ok;s.onerror=()=>ko(new Error("Google non raggiungibile"));document.head.appendChild(s)})}
-function gAuth(silent){if(gTok&&Date.now()<gExp-6e4)return Promise.resolve(gTok);
+function gAuth(silent){if(gValid())return Promise.resolve(gTok);
+  if(silent)return Promise.reject(new Error("silent")); // mai finestre di Google senza un tocco dell'utente
   return gLoad().then(()=>new Promise((ok,ko)=>{
-    const tm=silent?setTimeout(()=>ko(new Error("silent")),15000):0;
     google.accounts.oauth2.initTokenClient({client_id:GID,scope:GSC,
-      callback:r=>{clearTimeout(tm);if(r.error)return ko(new Error(r.error));gTok=r.access_token;gExp=Date.now()+(+r.expires_in||3600)*1e3;ok(gTok)},
-      error_callback:e=>{clearTimeout(tm);ko(new Error(e&&e.type||"errore"))}
-    }).requestAccessToken({prompt:silent?"none":""})}))}
+      callback:r=>{if(r.error)return ko(new Error(r.error));gTok=r.access_token;gExp=Date.now()+(+r.expires_in||3600)*1e3;gTokSave();ok(gTok)},
+      error_callback:e=>ko(new Error(e&&e.type||"errore"))
+    }).requestAccessToken({prompt:""})}))}
 async function gf(u,o){const r=await fetch(u,{...o,headers:{...(o&&o.headers),Authorization:"Bearer "+gTok}});
-  if(r.status===401){gTok=null;throw new Error("sessione scaduta")}if(!r.ok)throw new Error("Drive "+r.status);return r}
+  if(r.status===401){gTok=null;try{localStorage.removeItem(GT)}catch(e){}throw new Error("sessione scaduta")}if(!r.ok)throw new Error("Drive "+r.status);return r}
 async function gSync(silent){
   if(gBusy){gDirty=true;return}gBusy=true;gSet("Sincronizzazione…");
   try{await gAuth(silent);stamp();
@@ -122,14 +129,14 @@ async function gSync(silent){
         body:"--"+b+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify({name:GF,parents:["appDataFolder"]})+"\r\n--"+b+"\r\nContent-Type: application/json\r\n\r\n"+out+"\r\n--"+b+"--"})}}
     try{localStorage.setItem(GK,"1")}catch(e){}
     gLast=Date.now();gSet("Sincronizzato alle "+new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}));
-  }catch(e){gSet(silent?"Tocca la nuvola per sincronizzare":"Sincronizzazione non riuscita: "+e.message)}
+  }catch(e){gSet(e.message==="silent"?"Da sincronizzare: tocca la nuvola":"Sincronizzazione non riuscita: "+e.message)}
   finally{gBusy=false;if(gDirty){gDirty=false;syncSoon()}}}
 function syncSoon(){if(!gOn())return;clearTimeout(gT);gT=setTimeout(()=>gSync(true),4000)}
-function gOff(){try{localStorage.removeItem(GK)}catch(e){}if(gTok&&window.google&&google.accounts)google.accounts.oauth2.revoke(gTok);gTok=null;gMsg="Non collegato";render()}
+function gOff(){try{localStorage.removeItem(GK);localStorage.removeItem(GT)}catch(e){}if(gTok&&window.google&&google.accounts)google.accounts.oauth2.revoke(gTok);gTok=null;gMsg="Non collegato";render()}
 const syncCard=()=>`<div class="card"><h2>Google Drive</h2><p class="mut" id="sy">${esc(gMsg||(gOn()?"Collegato":"Non collegato"))}</p><div style="display:flex;gap:10px">${ib("cloud","gSync(false)","Sincronizza ora")}${gOn()?ib("x","gOff()","Scollega"):""}</div></div>`;
-if(gOn())setTimeout(()=>gSync(true),1500);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden&&gOn()&&Date.now()-gLast>12e4)gSync(true)});
-P.cloud='<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>';
+gTokLoad();if(gOn())setTimeout(()=>gSync(true),1500);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&gOn()&&gValid()&&Date.now()-gLast>12e4)gSync(true)});
+P.cloud='<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>';P.home='<path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/>';P.edit='<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>';
 // ---- fine sincronizzazione ----
 let cm={};const path=i=>{let p=[],c=cm[i];while(c){p.unshift(c.n);c=cm[c.p]}return p.join(" › ")};
 const topc=i=>{let c=cm[i];while(c&&c.p&&cm[c.p])c=cm[c.p];return c};
@@ -248,8 +255,8 @@ const bal=a=>S.T.reduce((s,t)=>s+(t.a===a?t.x:0)+(t.b===a?t.y:0),0);
 const catOpts=sel=>'<option value="">no categoria</option>'+S.C.map(c=>({i:c.i,p:path(c.i)})).sort((a,b)=>a.p.localeCompare(b.p,"it")).map(c=>`<option value="${c.i}"${c.i===sel?" selected":""}>${esc(c.p)}</option>`).join("");
 const accOpts=(sel,all,k)=>{const w=Date.now()-365*864e5,r={},n={};S.T.forEach(t=>{if(k&&kind(t)!==k)return;(k?[t.a]:[t.a,t.b]).forEach(i=>{if(i){n[i]=(n[i]||0)+1;if(t.d>w)r[i]=(r[i]||0)+1}})});return (all?'<option value="">Tutti i conti</option>':"")+S.A.filter(a=>a.on||a.i===sel).sort((p,q)=>(r[q.i]||0)-(r[p.i]||0)||(n[q.i]||0)-(n[p.i]||0)).map(a=>`<option value="${a.i}"${a.i===sel?" selected":""}>${esc(a.n)}</option>`).join("")};
 
-const tabs=[["add","Aggiungi","plusc"],["list","Movimenti","list"],["rep","Report","chart"],["acc","Conti","card"],["more","Altro","dots"]];
-let tab="add",editId=null,ch=[];
+const tabs=[["home","Home","home"],["add","Aggiungi","plusc"],["list","Movimenti","list"],["rep","Report","chart"],["acc","Conti","card"],["more","Altro","dots"]];
+let tab="home",editId=null,ch=[];
 function go(t){tab=t;aqr="";addP=null;tcv=null;render()}
 function acRun(){aqr=$("#ac-q").value;const t=$("#ac-tree");if(t&&acT)t.innerHTML=acT()}
 function acAdd(){addPre=($("#ac-q").value||"").trim();addP="";render()}
@@ -264,10 +271,33 @@ function render(){const y0=window.scrollY;
   cm={};S.C.forEach(c=>cm[c.i]=c);
   $("#nav").innerHTML=tabs.map(([k,n,i])=>`<button class="${k===tab?"on":""}" title="${n}" aria-label="${n}" onclick="go('${k}')">${ic(i,24)}</button>`).join("");
   ch.forEach(c=>c.destroy());ch=[];
-  ({add:vAdd,list:vList,rep:vRep,acc:vAcc,more:vMore})[tab]();
+  ({home:vHome,add:vAdd,list:vList,rep:vRep,acc:vAcc,more:vMore})[tab]();
   if(tab==="acc")ptDraw();
   window.scrollTo(0,lt===tab?y0:0);lt=tab;
 }
+
+/* ---------- Home: elenco conti come in Financisto ---------- */
+// Ordinamento manuale come Financisto: il numero più alto sta più in alto.
+const TY={CASH:"Contanti",BANK:"Conto bancario",DEBIT_CARD:"Carta di debito",CREDIT_CARD:"Carta di credito",ELECTRONIC:"Elettronico",ASSET:"Attività",LIABILITY:"Passività",OTHER:"Altro"};
+const sortedAcc=()=>S.A.map((a,i)=>[a,i]).filter(p=>p[0].on).sort((p,q)=>(q[0].so==null?-1e9:q[0].so)-(p[0].so==null?-1e9:p[0].so)||p[1]-q[1]).map(p=>p[0]);
+let ordEdit=false;
+function setSo(i,v){const a=acc(i);if(!a)return;a.so=parseInt(v)||0;a.sl=1;save();render()}
+function mvSo(i,d){const l=sortedAcc(),k=l.findIndex(a=>a.i===i),j=k+d;if(k<0||j<0||j>=l.length)return;
+  l.forEach((a,n)=>{a.so=(l.length-n)*10;a.sl=1});const t=l[k].so;l[k].so=l[j].so;l[j].so=t;save();render()}
+function vHome(){
+  const l=sortedAcc(),tot=l.filter(a=>a.tot).reduce((s,a)=>s+bal(a.i),0),ld={};
+  S.T.forEach(t=>{if(!ld[t.a]||t.d>ld[t.a])ld[t.a]=t.d;if(t.b&&(!ld[t.b]||t.d>ld[t.b]))ld[t.b]=t.d});
+  const dd=ms=>ms?new Date(ms).toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"2-digit"}):"";
+  const row=a=>{const v=bal(a.i),c=v<0?"neg":v>0?"pos":"";
+    if(ordEdit)return `<div class="row" style="cursor:default"><div class="m"><b>${esc(a.n)}</b><small>${esc(TY[a.t]||a.t||"Altro")}</small></div><input type="number" inputmode="numeric" value="${a.so==null?"":a.so}" aria-label="Ordinamento di ${esc(a.n)}" style="width:76px;text-align:right" onchange="setSo('${a.i}',this.value)">${ib("chu","mvSo('"+a.i+"',-1)","Sposta su")}${ib("chd","mvSo('"+a.i+"',1)","Sposta giù")}</div>`;
+    return `<div class="row" onclick="goAcc('${a.i}')"><div class="m"><small style="display:block">${esc(TY[a.t]||a.t||"Altro")}${a.tot?"":" · fuori dai totali"}</small><b style="font-size:17px">${esc(a.n)}</b><small style="display:block">${dd(ld[a.i])}</small></div><div class="r ${c}" style="font-size:17px">${eur(v)}</div></div>`};
+  $("#v").innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between"><h1>Financial</h1>${ib(ordEdit?"check":"edit","ordEdit=!ordEdit;render()",ordEdit?"Fine":"Cambia l’ordine dei conti")}</div>
+  ${ordEdit?`<p class="mut" style="margin:0 0 10px">Come in Financisto, il numero più alto va più in alto. Cambia il numero oppure usa le frecce.</p>`:""}
+  <div class="card">${l.map(row).join("")||'<p class="mut">Nessun conto. Importa il backup da Altro o crea un conto in Conti.</p>'}</div>
+  <div class="card"><div class="sum" style="border:0;padding:4px 0"><span>Totale<small>Conti inclusi nei totali</small></span><b class="${tot<0?"neg":"pos"}" style="font-size:22px">${eur(tot)}</b></div></div>
+  ${gOn()?`<div class="card" style="display:flex;align-items:center;gap:10px"><span class="mut" id="sy2" style="flex:1">${esc(gMsg||"Google Drive collegato")}</span>${ib("cloud","gSync(false)","Sincronizza ora")}</div>`:""}`;
+}
+function goAcc(i){F.a=i;F.m="";F.y="";F.q="";F.c=null;F.cl="";F.ids=null;F.rep=false;F.n=100;tab="list";render()}
 
 /* ---------- Aggiungi / modifica ---------- */
 let ek="e",catTouched=false,pre=null,tpMore=false,tpAll=false,tpK="e",accTouched=false,mgSrc=null,rcSrc=null,PT={a:"",r:"12"};
@@ -304,21 +334,29 @@ function saveTx(nw){
 }
 function delTx(){S.T=S.T.filter(x=>x.i!==editId);S.D.push(editId);editId=null;tab="list";save();toast("Eliminato");render()}
 function edit(i){editId=i;tab="add";render()}
-function rows(l,sa){return l.map(t=>{const k=kind(t),cn=t.c?path(t.c):"",an=(acc(t.a)||{}).n||"?";
+function rows(l,sa,fa){return l.map(t=>{const k=kind(t),cn=t.c?path(t.c):"",an=(acc(t.a)||{}).n||"?";
   const sub=k==="t"?`${esc(an)} → ${esc((acc(t.b)||{}).n||"?")}`:`${sa?esc(an)+" › ":""}${cn?esc(cn):"no categoria"}`;
-  return `<div class="row" onclick="edit('${t.i}')"><div class="m"><b>${sub}${t.n?" ("+esc(t.n)+")":""}</b><small>${dt(t.d)}</small></div><div class="r ${k==="e"?"neg":k==="i"?"pos":""}">${eur(k==="t"?t.y:t.x)}</div><button class="b g ic sm" title="Duplica" aria-label="Duplica" onclick="event.stopPropagation();cloneTx('${t.i}')">${ic("copy",18)}</button></div>`}).join("")}
+  return `<div class="row" onclick="edit('${t.i}')"><div class="m"><b>${sub}${t.n?" ("+esc(t.n)+")":""}</b><small>${dt(t.d)}</small></div><div class="r ${k==="e"?"neg":k==="i"?"pos":k==="t"&&fa&&(t.a===fa||t.b===fa)?(t.a===fa?"neg":"pos"):""}">${eur(k==="t"?(fa&&t.a===fa?-Math.abs(t.x):fa&&t.b===fa?Math.abs(t.y):t.y):t.x)}</div><button class="b g ic sm" title="Duplica" aria-label="Duplica" onclick="event.stopPropagation();cloneTx('${t.i}')">${ic("copy",18)}</button></div>`}).join("")}
 
 /* ---------- Movimenti ---------- */
+/* Selettore del mese: quello nativo del browser (a scorrimento sul telefono) dove esiste, altrimenti due menu mese/anno */
+const MN=["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+let HASMONTH=false;try{const i=document.createElement("input");i.type="month";HASMONTH=i.type==="month"}catch(e){}
+function mpick(id,v,st){v=v||loc(Date.now()).slice(0,7);
+  if(HASMONTH)return `<input id="${id}" type="month" value="${v}" style="${st||""}">`;
+  const [y,m]=v.split("-"),ys=[...new Set(S.T.map(t=>loc(t.d).slice(0,4)).concat(y))].sort().reverse();
+  return `<span id="${id}" style="display:flex;gap:10px;${st||""}"><select aria-label="Mese" style="flex:1;min-width:0">${MN.map((n,i)=>`<option value="${String(i+1).padStart(2,"0")}"${+m===i+1?" selected":""}>${n}</option>`).join("")}</select><select aria-label="Anno" style="flex:1;min-width:0">${ys.map(a=>`<option${a===y?" selected":""}>${a}</option>`).join("")}</select></span>`}
+const mval=id=>{const e=$("#"+id);if(e.tagName==="INPUT")return e.value;const q=e.querySelectorAll("select");return q[1].value+"-"+q[0].value};
 let F={q:"",a:"",m:loc(Date.now()).slice(0,7),n:100};
 function vList(){
   const yrs=[...new Set(S.T.map(t=>loc(t.d).slice(0,4)))].sort().reverse(),pm=F.m?"m":F.y?"y":"t",fx="flex:1;min-width:0";
-  $("#v").innerHTML=`<h1>Movimenti</h1>${fchips()}<div class="card"><label style="margin-top:0">Cerca</label><input id="q" value="${esc(F.q)}" placeholder="categoria o nota" autocomplete="off"><div id="qs"></div>
-  <label>Data</label><div style="display:flex;gap:10px"><select id="fp" style="${fx}">${[["t","Tutto"],["m","Mese"],["y","Anno"]].map(([k,n])=>`<option value="${k}"${pm===k?" selected":""}>${n}</option>`).join("")}</select>${pm==="m"?`<input id="m" type="month" value="${F.m}" style="${fx}">`:pm==="y"?`<select id="fy" style="${fx}">${yrs.map(y=>`<option${y===F.y?" selected":""}>${y}</option>`).join("")}</select>`:""}</div>
+  $("#v").innerHTML=`<h1>${F.a?esc(an(F.a)):"Movimenti"}</h1>${F.a?`<p class="mut" style="margin:-6px 0 12px">Saldo <b class="${bal(F.a)<0?"neg":""}">${eur(bal(F.a))}</b></p>`:""}${fchips()}<div class="card"><label style="margin-top:0">Cerca</label><input id="q" value="${esc(F.q)}" placeholder="categoria o nota" autocomplete="off"><div id="qs"></div>
+  <label>Data</label><div style="display:flex;gap:10px"><select id="fp" style="${fx}">${[["t","Tutto"],["m","Mese"],["y","Anno"]].map(([k,n])=>`<option value="${k}"${pm===k?" selected":""}>${n}</option>`).join("")}</select>${pm==="m"?`${mpick("m",F.m,fx)}`:pm==="y"?`<select id="fy" style="${fx}">${yrs.map(y=>`<option${y===F.y?" selected":""}>${y}</option>`).join("")}</select>`:""}</div>
   <label>Conto</label><select id="fa">${accOpts(F.a,1)}</select></div><div class="card" id="lr"></div>`;
   $("#q").oninput=()=>{F.q=$("#q").value;F.n=100;qsRun();lrows()};
   $("#fa").oninput=()=>{F.a=$("#fa").value;F.n=100;lrows()};
   $("#fp").onchange=e=>{const v=e.target.value,now=loc(Date.now());F.m=v==="m"?(F.m||now.slice(0,7)):"";F.y=v==="y"?(F.y||yrs[0]||now.slice(0,4)):"";F.n=100;render()};
-  if($("#m"))$("#m").oninput=()=>{F.m=$("#m").value;F.n=100;lrows()};
+  if($("#m"))$("#m").onchange=()=>{F.m=mval("m");F.n=100;lrows()};
   if($("#fy"))$("#fy").onchange=e=>{F.y=e.target.value;F.n=100;lrows()};
   qsRun();lrows();
 }
@@ -332,7 +370,9 @@ function lrows(){
   const q=F.q.toLowerCase();
   const l=S.T.filter(t=>(!F.a||t.a===F.a||t.b===F.a)&&(!F.m||loc(t.d).slice(0,7)===F.m)&&(!F.y||loc(t.d).slice(0,4)===F.y)&&(!F.c||F.c.includes(t.c||"-"))&&(!F.rep||(!t.b&&(acc(t.a)||{}).tot))&&(!F.ids||F.ids.has(t.i))&&(!q||(t.n||"").toLowerCase().includes(q))).sort((a,b)=>b.d-a.d);
   const se=l.reduce((s,t)=>s+(!t.b&&t.x<0?t.x:0),0),si=l.reduce((s,t)=>s+(!t.b&&t.x>0?t.x:0),0);
-  $("#lr").innerHTML=`<div class="sum"><span class="mut">${l.length} movimenti</span><span style="text-align:right"><b class="neg">${eur(se)}</b> + <b class="pos">${eur(si)}</b> = <b class="${se+si<0?"neg":"pos"}">${eur(se+si)}</b></span></div>`+rows(l.slice(0,F.n),!F.a)+(l.length>F.n?`<p>${ib("chd","F.n+=200;lrows()","Mostra altri")}</p>`:"")||'<p class="mut">Nessun risultato.</p>';
+  const fa=F.a,ht=!!fa&&l.some(t=>t.b),tr=ht?l.reduce((s,t)=>s+(t.b?(t.a===fa?-Math.abs(t.x):t.b===fa?Math.abs(t.y):0):0),0):0,vr=se+si+tr;
+  const tp=(c,v,t)=>`<b class="${c}" title="${t}" onclick="toast(this.title)" style="cursor:help">${eur(v)}</b>`;
+  $("#lr").innerHTML=`<div class="sum"><span class="mut">${l.length} movimenti</span><span style="text-align:right">${tp("neg",se,"Spese: somma dei movimenti in uscita, esclusi i trasferimenti")} + ${tp("pos",si,"Entrate: somma dei movimenti in entrata, esclusi i trasferimenti")}${ht?` ${tr<0?"−":"+"} ${tp(tr<0?"neg":tr>0?"pos":"",Math.abs(tr),"Trasferimenti: soldi arrivati in questo conto meno soldi usciti verso i tuoi altri conti")}`:""} = ${tp(vr<0?"neg":"pos",vr,ht||fa?"Variazione del saldo del conto nel periodo: spese + entrate ± trasferimenti":"Differenza tra entrate e spese (i trasferimenti tra i tuoi conti si annullano)")}</span></div>`+rows(l.slice(0,F.n),!F.a,F.a)+(l.length>F.n?`<p>${ib("chd","F.n+=200;lrows()","Mostra altri")}</p>`:"")||'<p class="mut">Nessun risultato.</p>';
 }
 
 /* ---------- Report ---------- */
@@ -345,11 +385,11 @@ function vRep(){
   const inc=new Set(S.A.filter(a=>a.tot).map(a=>a.i)),T=S.T.filter(t=>!t.b&&inc.has(t.a));
   const ym=t=>loc(t.d).slice(0,7),yrs=[...new Set(T.map(t=>ym(t).slice(0,4)).concat(R.y))].sort().reverse();
   const per=t=>R.sc==="a"||(R.sc==="y"?ym(t).slice(0,4)===R.y:ym(t)===R.m);
-  const flt=R.sc==="m"?`<label>Mese</label><input id="rm" type="month" value="${R.m}">`:R.sc==="y"?`<label>Anno</label><select id="ry">${yrs.map(y=>`<option${y===R.y?" selected":""}>${y}</option>`).join("")}</select>`:"";
+  const flt=R.sc==="m"?`<label>Mese</label>${mpick("rm",R.m)}`:R.sc==="y"?`<label>Anno</label><select id="ry">${yrs.map(y=>`<option${y===R.y?" selected":""}>${y}</option>`).join("")}</select>`:"";
   $("#v").innerHTML=`<h1>Report</h1><div class="card two"><div><label>Periodo</label><select id="rs">${[["m","Mese"],["y","Anno"],["a","Tutto"]].map(([k,n])=>`<option value="${k}"${R.sc===k?" selected":""}>${n}</option>`).join("")}</select></div><div>${flt}</div></div>
   <div class="grid c3"><div class="card"><h2>${{m:"Ultimi 12 mesi",y:"Mesi dell’anno",a:"Anni"}[R.sc]}</h2><div class="cv"><canvas id="c1"></canvas></div></div><div class="card"><h2>Spese per categoria</h2><div class="cv"><canvas id="c2"></canvas></div></div></div><div class="grid c3"><div class="card" id="ri"></div><div class="card" id="rcmp"></div></div><div class="card" id="rtop"></div><div class="card" id="rt"></div>`;
   $("#rs").onchange=e=>{R.sc=e.target.value;render()};
-  if($("#rm"))$("#rm").onchange=e=>{R.m=e.target.value||R.m;render()};
+  if($("#rm"))$("#rm").onchange=()=>{R.m=mval("rm")||R.m;render()};
   if($("#ry"))$("#ry").onchange=e=>{R.y=e.target.value;render()};
   const D=T.filter(per);
   let sel=[],lab,key=ym;
@@ -394,7 +434,7 @@ function vRep(){
 
 /* ---------- Conti ---------- */
 function vAcc(){
-  const on=S.A.filter(a=>a.on),off=S.A.filter(a=>!a.on),tot=S.A.filter(a=>a.tot&&a.on).reduce((s,a)=>s+bal(a.i),0),nx=S.A.filter(a=>!a.tot&&a.on).length,ex=S.A.filter(a=>!a.tot&&a.on).reduce((s,a)=>s+bal(a.i),0);
+  const on=sortedAcc(),off=S.A.filter(a=>!a.on),tot=S.A.filter(a=>a.tot&&a.on).reduce((s,a)=>s+bal(a.i),0),nx=S.A.filter(a=>!a.tot&&a.on).length,ex=S.A.filter(a=>!a.tot&&a.on).reduce((s,a)=>s+bal(a.i),0);
   const li=a=>`<div class="row" style="cursor:default"><input value="${esc(a.n)}" onchange="ren('A','${a.i}',this.value)" style="flex:1"><span class="r ${bal(a.i)<0?"neg":""}" style="min-width:96px;cursor:pointer;text-decoration:underline dotted" title="Tocca per riconciliare il saldo" onclick="rcSrc='${a.i}';render()">${eur(bal(a.i))}</span>${ib(a.tot?"sum":"sumoff","togT('"+a.i+"')",a.tot?"Incluso nei totali: tocca per escludere":"Escluso dai totali: tocca per includere",a.tot?"p":"g")}${ib(a.on?"arch":"rest","togA('"+a.i+"')",a.on?"Archivia":"Riattiva")}</div>`+(rcSrc===a.i?`<div class="row" style="cursor:default"><span class="mut">Saldo reale:</span><input id="rc-v" inputmode="decimal" placeholder="${(bal(a.i)/100).toFixed(2).replace(".",",")}" style="flex:1">${ib("check","doRec()","Conferma","p")}${ib("x","rcSrc=null;render()","Annulla")}</div>`:"");
   $("#v").innerHTML=`<h1>Conti</h1><div class="card"><div class="sum"><span>Totale (conti inclusi nei totali)</span><b>${eur(tot)}</b></div>${nx?`<div class="sum"><span class="mut">Fuori dai totali (${nx})</span><b class="mut">${eur(ex)}</b></div>`:""}<p class="mut">Il simbolo Σ pieno indica un conto incluso nei totali, quello barrato un conto escluso. Vale anche per i report.</p>${on.map(li).join("")||'<p class="mut">Nessun conto.</p>'}</div>
   ${ptCard()}<div class="card"><h2>Nuovo conto</h2><div class="two"><input id="na" placeholder="Nome, ad esempio Cassa"><select id="nt"><option>CASH</option><option>BANK</option><option>CREDIT_CARD</option><option>ELECTRONIC</option><option>OTHER</option></select></div><p>${ib("plus","addA()","Aggiungi conto","p")}</p></div>
@@ -417,45 +457,57 @@ function vMore(){
   const arcSec=()=>{const A=S.C.filter(c=>c.ar),q=aqv(),sub=(p,d)=>S.C.filter(c=>c.p===p&&c.ar).sort((x,y)=>x.n.localeCompare(y.n,"it")).map(c=>`<div class="row" style="cursor:default;padding-left:${4+d*20}px;opacity:.7"><span style="flex:1">${esc(c.n)}</span></div>`+sub(c.i,d+1)).join(""),hit=c=>!q||c.n.toLowerCase().includes(q)||path(c.i).toLowerCase().includes(q)||S.C.some(y=>y.p===c.i&&y.ar&&hit(y)),l=A.filter(c=>!(c.p&&cm[c.p]&&cm[c.p].ar)&&hit(c)).sort((x,y)=>path(x.i).localeCompare(path(y.i),"it"));
     return `<h2 style="margin:18px 0 8px;font-size:15px">Archiviate (${A.length})</h2>`+(l.length?`<div class="scr">${l.map(c=>`<div class="row" style="cursor:default"><span style="flex:1">${esc(path(c.i))}</span>${ib("rest","arcC('"+c.i+"',0)","Ripristina categoria")}</div>`+sub(c.i,1)).join("")}</div>`:`<p class="mut">${A.length?"Nessuna archiviata trovata.":"Nessuna categoria archiviata."}</p>`)};
   acT=()=>'<div class="scr">'+(tree(null,0)||'<p class="mut">'+(aqv()?"Nessuna categoria trovata: premi + per crearla.":"Nessuna categoria.")+'</p>')+'</div>'+arcSec();
-  $("#v").innerHTML=`<h1>Altro</h1>${dupCard}${rcCard()}${lnCard()}${tpCard()}<div class="grid c3"><div>${syncCard()}<div class="card"><h2>Dati</h2><p class="mut">Importa il file <b>.backup</b> di Financisto: i movimenti già importati vengono aggiornati senza duplicati, e quelli creati qui restano intatti.</p>
-  <div style="display:flex;gap:10px"><label class="fb" title="Importa backup" aria-label="Importa backup">${ic("up")}<input type="file" id="fi"></label>${ib("dl","exp()","Esporta tutto (JSON)")}</div><p class="mut" id="fm"></p></div>
+  $("#v").innerHTML=`<h1>Altro</h1>${dupCard}${rcCard()}${lnCard()}${tpCard()}<div class="grid c3"><div>${syncCard()}${datiCard()}
   <div class="card"><h2>Tema</h2><select id="th" onchange="th(this.value)"><option value="">Automatico</option><option value="light">Chiaro</option><option value="dark">Scuro</option></select></div></div>
-  <div class="card"><h2>Categorie</h2><div class="cr" style="margin:4px 0 8px"><input id="ac-q" placeholder="Filtra o aggiungi categoria" oninput="acRun()" value="${esc(aqr)}" autocomplete="off" style="flex:1;min-width:0"><button class="b g cx" title="Aggiungi categoria" aria-label="Aggiungi categoria" onclick="acAdd()">${ic("plus",18)}</button></div>${addP===""?addCRow(0):""}<div id="ac-tree">${acT()}</div></div>${modCard()}</div>`;
-  $("#fi").onchange=e=>{const f=e.target.files[0];e.target.value="";imp(f)};if(addP!==null&&$("#nc")){$("#nc").focus();$("#nc").select()}else if(tcv&&$("#tc-n")){$("#tc-n").focus();$("#tc-n").select()}
+  <div class="card"><h2>Categorie</h2><div class="cr" style="margin:4px 0 8px"><input id="ac-q" placeholder="Filtra o aggiungi categoria" oninput="acRun()" value="${esc(aqr)}" autocomplete="off" style="flex:1;min-width:0"><button class="b g cx" title="Aggiungi categoria" aria-label="Aggiungi categoria" onclick="acAdd()">${ic("plus",18)}</button></div>${addP===""?addCRow(0):""}<div id="ac-tree">${acT()}</div></div></div>`;
+  $("#fi").onchange=e=>{const f=e.target.files[0];e.target.value="";imp(f)};if($("#fj"))$("#fj").onchange=e=>{const f=e.target.files[0];e.target.value="";imp(f,"json")};if(addP!==null&&$("#nc")){$("#nc").focus();$("#nc").select()}else if(tcv&&$("#tc-n")){$("#tc-n").focus();$("#tc-n").select()}
 }
-const MODIFICHE=[
-  ["03/11/2026","Altro › Google Drive","Sincronizzazione tra dispositivi: accedi con Google e i dati vengono uniti con quelli salvati nella cartella nascosta dell’app su Drive (nessun altro tuo file è visibile all’app). Ogni elemento ha ora una data di modifica e le eliminazioni sono registrate, così PC e cellulare si uniscono senza perdere modifiche. Si sincronizza da sola dopo ogni salvataggio, all’apertura e quando torni sull’app; se Google chiede di nuovo l’accesso, tocca la nuvola."],
-  ["03/11/2026","Report","Colonne Spese ed Entrate allineate in tutte le righe della tabella “Per categoria”: ogni riga è una tabella a sé, quindi ora le larghezze delle colonne sono fisse (40% nome, 52 px pulsante, il resto diviso tra Spese ed Entrate)."],
-  ["03/11/2026","Movimenti","Il filtro “Come nel report” si chiama ora “report”. Si attiva quando apri una categoria dal Report e nasconde giroconti e movimenti dei conti esclusi dai totali, così la somma torna con quella del Report."],
-  ["03/11/2026","Altro","Aggiunta questa sezione “Modifiche fatte”, che elenca le modifiche all’app e resta nel file HTML se lo esporti."]
-  ,["03/11/2026","Altro › Categorie","Tolta la scelta del livello padre. Ora il + in alto crea una categoria principale e il + su ogni riga crea una sottocategoria: il campo compare sotto la riga, Invio o la spunta per confermare. Se esiste già una categoria con lo stesso nome allo stesso livello non la duplica."],
-  ["03/11/2026","Nuovo movimento","Nel selettore delle categorie c’è il + accanto al filtro (nuova categoria principale, precompilata con il testo del filtro) e un + su ogni riga (nuova sottocategoria). La categoria creata viene subito selezionata."],
-  ["03/11/2026","Ovunque","“Senza categoria” rinominato “no categoria”."],
-  ["03/11/2026","Altro › Categorie","Il campo in alto è ora sia filtro sia nuova categoria, come nel selettore di Nuovo movimento: scrivendo l’elenco si filtra (restano visibili anche genitori e figli delle corrispondenze) e il + apre la creazione di una categoria principale con il testo digitato già inserito."],
-  ["03/11/2026","Categorie","Archiviazione: in Altro › Categorie il pulsante a cassetto su ogni riga archivia la categoria e le sue sottocategorie. Le archiviate restano sui vecchi movimenti e nei report ma non compaiono più nel selettore, tra i suggeriti, tra le più usate e nel menu dei mutui. Non si archivia una categoria usata da una ricorrenza o da un mutuo."],
-  ["03/11/2026","Nuovo movimento","Il campo del selettore categorie ha ora lo stesso testo di Altro: “Filtra o aggiungi categoria”."],
-  ["03/11/2026","Altro › Categorie","In fondo c’è la sezione “Archiviate”: elenca le categorie archiviate (con le loro sottocategorie sotto) e il pulsante di ripristino riattiva tutto il ramo; segue il filtro in alto. Tolto il pulsante mostra/nascondi archiviate. L’elenco delle categorie e quello delle archiviate hanno un’altezza massima di 40 righe con scroll interno (si cambia con --rows in cima al CSS)."],
-  ["03/11/2026","Altro › Template","Su ogni template di spesa o entrata c’è l’icona a etichetta “Trasforma in categoria”: scegli nome e posizione (dentro la categoria del template, nella categoria sopra o al livello principale) e l’app crea la categoria e vi sposta i movimenti con stesso conto, categoria e importo del template: di default tutti, anche i più vecchi (preselezionato), oppure solo quelli dell’ultimo anno. Il numero di movimenti è mostrato prima di confermare. I movimenti spostati diventano “inseriti qui”, quindi una nuova importazione di Financisto non rimette la vecchia categoria. L’ultima conversione si annulla dalla riga “Ultima conversione”."],
-  ["03/11/2026","Altro › Template","Toccando un template (nome e importo) si apre Movimenti filtrato su quei movimenti: stesso conto, categoria e importo, in tutto lo storico (il numero “volte” conta solo l’ultimo anno). In alto compare un filtro con il nome del template, che si toglie con la X."],
-  ["03/11/2026","Movimenti","Il filtro Cerca mostra le categorie corrispondenti mentre scrivi: tocchi una categoria per filtrare (con le sottocategorie), altrimenti il testo cerca solo nelle note. Il filtro Data (senza la scritta Mese) ha tre modi: Tutto, Mese o Anno. Aprendo i movimenti di un template, con la data su Tutto si vedono tutti, anche i più vecchi."],
-  ["03/11/2026","Report e Movimenti","Dove compaiono spese ed entrate c’è ora anche la differenza (entrate meno spese): in Movimenti, nella riga in alto, come somma (spese + entrate = differenza); nel Report, nella tabella Per categoria, come colonna Differenza su schermi larghi e come riga sotto il nome su cellulare."]
-];
-const modCard=()=>`<div class="card"><h2>Modifiche fatte</h2>${MODIFICHE.slice().reverse().map(m=>`<div class="row" style="cursor:default"><div class="m"><b>${esc(m[1])}</b><small>${esc(m[0])}</small><p style="margin:4px 0 0">${esc(m[2])}</p></div></div>`).join("")}</div>`;
 function th(v){if(v)document.documentElement.dataset.theme=v;else delete document.documentElement.dataset.theme;render()}
 function addC(){const n=$("#nc").value.trim();if(!n||addP===null)return;if(S.C.some(x=>(x.p||null)===(addP||null)&&x.n.toLowerCase()===n.toLowerCase())){toast("Esiste già");return}S.C.push({i:uid(),n,p:addP||null});if(!addP)aqr="";addP=null;save();render()}
 function delC(i){const used=S.T.some(t=>t.c===i),kid=S.C.some(c=>c.p===i);if(used||kid){toast("Impossibile: categoria in uso o con sottocategorie");return}S.C=S.C.filter(c=>c.i!==i);save();render()}
 function delDup(i){S.T=S.T.filter(x=>x.i!==i);S.D.push(i);save();toast("Eliminato");render()}
-function exp(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:"application/json"}));a.download="cassetto-"+new Date().toISOString().slice(0,10)+".json";a.click()}
-async function imp(f){
+/* ---------- Dati: migrazione, JSON, CSV, cancellazione ---------- */
+let dm=null; // conferma in corso: {k:"json",j,name} oppure {k:"del"}
+const nTot=o=>`${(o.A||[]).length} conti, ${(o.C||[]).length} categorie, ${(o.T||[]).length} movimenti`;
+const drvW=()=>gOn()?" Google Drive è collegato: alla prossima sincronizzazione la modifica arriva anche su Drive e sugli altri dispositivi.":"";
+const NEWS=()=>({A:[],C:[],T:[],D:[],L:{},RC:[],LN:[]});
+function datiCard(){
+  const row=(t,d,b)=>`<div class="row" style="cursor:default"><div class="m"><b style="white-space:normal">${t}</b><small>${d}</small></div>${b}</div>`;
+  const fb=(id,t,acc)=>`<label class="fb" title="${t}" aria-label="${t}">${ic("up")}<input type="file" id="${id}"${acc?` accept="${acc}"`:""}></label>`;
+  let w="";
+  if(dm&&dm.k==="json")w=`<div class="card" style="border-color:var(--out);margin:0 0 12px"><b class="neg">Sostituire tutti i dati?</b><p class="mut">Stai importando <b>${esc(dm.name)}</b> (${nTot(dm.j)}). Tutti i dati attuali (${nTot(S)}) verranno <b>cancellati e sostituiti</b>: dall’app non si può annullare.${esc(drvW())} Per tenerli, esporta prima un JSON.</p><div style="display:flex;gap:10px"><button class="b g" onclick="dm=null;render()">Annulla</button><button class="b d" onclick="dmJson()">Cancella e importa</button></div></div>`;
+  if(dm&&dm.k==="del")w=`<div class="card" style="border-color:var(--out);margin:0 0 12px"><b class="neg">Cancellare tutti i dati?</b><p class="mut">Verranno eliminati ${nTot(S)}, con ricorrenze e mutui. Non si può annullare.${esc(drvW())} Per tenerli, esporta prima un JSON. Scrivi <b>CANCELLA</b> per confermare.</p><input id="dc" autocomplete="off" oninput="$('#dcb').disabled=this.value.trim().toUpperCase()!=='CANCELLA'" style="margin-bottom:10px"><div style="display:flex;gap:10px"><button class="b g" onclick="dm=null;render()">Annulla</button><button class="b d" id="dcb" disabled onclick="delAll()">Cancella tutto</button></div></div>`;
+  return `<div class="card"><h2>Dati</h2>${w}
+  ${row("Migrazione da Financisto","Importa il file .backup: i movimenti già importati vengono aggiornati senza duplicati, quelli creati qui restano intatti.",fb("fi","Importa backup di Financisto"))}
+  ${row("Importa JSON","Sostituisce tutti i dati con quelli del file: i dati attuali vengono cancellati.",fb("fj","Importa JSON","application/json,.json"))}
+  ${row("Esporta JSON","Copia completa dei dati, per backup o per spostarli su un altro dispositivo.",ib("dl","exp()","Esporta JSON"))}
+  ${row("Esporta CSV","Un movimento per riga, da aprire con Excel o Fogli Google.",ib("dl","expCsv()","Esporta CSV"))}
+  ${row("Cancella dati","Elimina tutto da questo dispositivo.",ib("trash","dm={k:'del'};render()","Cancella dati","d"))}
+  <p class="mut" id="fm"></p></div>`}
+function dmJson(){const j=dm.j;dm=null;try{localStorage.setItem(K+"_prev",JSON.stringify(S))}catch(e){}
+  S={...NEWS(),...j};S.G={};S.E=Date.now();snap();persist();syncSoon();toast("Dati sostituiti dal file");render()}
+function delAll(){dm=null;try{localStorage.removeItem(K+"_prev")}catch(e){}
+  S=NEWS();S.G={};S.E=Date.now();snap();persist();syncSoon();toast("Dati cancellati");render()}
+function expCsv(){
+  const q=v=>{v=String(v==null?"":v);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return /[;"\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v},n=c=>((c||0)/100).toFixed(2).replace(".",",");
+  const L=["Data;Tipo;Conto;Conto destinazione;Categoria;Importo;Importo destinazione;Nota"];
+  S.T.slice().sort((a,b)=>a.d-b.d).forEach(t=>{const k=kind(t);
+    L.push([loc(t.d).replace("T"," "),k==="t"?"trasferimento":k==="e"?"spesa":"entrata",q(an(t.a)),k==="t"?q(an(t.b)):"",t.c?q(path(t.c)):"",n(t.x),k==="t"?n(t.y):"",q(t.n)].join(";"))});
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+L.join("\r\n")],{type:"text/csv;charset=utf-8"}));
+  a.download="financial-movimenti-"+new Date().toISOString().slice(0,10)+".csv";a.click();toast("Esportati "+S.T.length+" movimenti")}
+function exp(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:"application/json"}));a.download="financial-"+new Date().toISOString().slice(0,10)+".json";a.click()}
+async function imp(f,only){
   if(!f)return;const m=$("#fm");m.textContent="Lettura in corso…";
   try{
     const buf=new Uint8Array(await f.arrayBuffer());let txt;
     if(buf[0]===0x1f&&buf[1]===0x8b)txt=window.DecompressionStream?await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).text():pako.ungzip(buf,{to:"string"});else txt=new TextDecoder().decode(buf);
-    if(txt.trim().startsWith("{")){const j=JSON.parse(txt);if(j.T){try{localStorage.setItem(K+"_prev",JSON.stringify(S))}catch(e){}S=j;S.RC=S.RC||[];S.LN=S.LN||[];save();toast("Dati ripristinati dal file");render()}return}
+    if(txt.trim().startsWith("{")){const j=JSON.parse(txt);if(!Array.isArray(j.T)||!Array.isArray(j.A))throw new Error("non è un file JSON di questa app");dm={k:"json",j,name:f.name};m.textContent="";render();return}
+    if(only==="json")throw new Error("il file non è un JSON esportato da questa app");
     const E={};let cur=null;
     for(const l of txt.split("\n")){if(l.startsWith("$ENTITY:")){cur={};(E[l.slice(8).trim()]=E[l.slice(8).trim()]||[]).push(cur)}else if(l.trim()==="$$")cur=null;else if(cur){const k=l.indexOf(":");if(k>0)cur[l.slice(0,k)]=l.slice(k+1).replace(/\r$/,"")}}
     if(!E.transactions)throw new Error("Non sembra un backup di Financisto");
-    (E.account||[]).forEach(a=>{const o={i:"f"+a._id,n:a.title,t:a.type,on:a.is_active==="1",tot:a.is_include_into_totals==="1"},k=S.A.findIndex(x=>x.i===o.i);k<0?S.A.push(o):S.A[k].lk||(S.A[k]=o)});
+    (E.account||[]).forEach(a=>{const o={i:"f"+a._id,n:a.title,t:a.type,on:a.is_active==="1",tot:a.is_include_into_totals==="1",so:parseInt(a.sort_order)||0},k=S.A.findIndex(x=>x.i===o.i);
+    if(k<0)S.A.push(o);else{const x=S.A[k];if(x.lk){if(!x.sl)x.so=o.so}else S.A[k]={...o,so:x.sl?x.so:o.so,sl:x.sl}}});
     const st=[];(E.category||[]).sort((a,b)=>a.left-b.left).forEach(c=>{while(st.length&&+st[st.length-1].right<+c.right)st.pop();const o={i:"f"+c._id,n:c.title,p:st.length?mapc("f"+st[st.length-1]._id):null},k=S.C.findIndex(x=>x.i===o.i);if(!(S.M&&S.M[o.i]))k<0?S.C.push(o):S.C[k]={...o,ar:S.C[k].ar};st.push(c)});
     const keep=S.T.filter(t=>t.s==="a"),have=new Set(keep.map(t=>t.i).concat(S.D));
     const nw=E.transactions.filter(t=>t.is_template==="0"&&t.parent_id==="0").map(t=>({i:"f"+t._id,d:+t.datetime,a:"f"+t.from_account_id,b:t.to_account_id!=="0"?"f"+t.to_account_id:null,c:t.category_id>0?mapc("f"+t.category_id):null,x:+t.from_amount,y:+t.to_amount,n:t.note||"",s:"f"})).filter(t=>!have.has(t.i));
