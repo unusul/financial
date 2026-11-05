@@ -188,7 +188,7 @@ const tl=a=>{const{r,n}=tstat(a);return S.A.filter(x=>x.on&&x.i!==a).sort((p,q)=
 const defTo=a=>(tl(a)[0]||{}).i;
 const toOpts=(a,sel)=>tl(a).map(x=>`<option value="${x.i}"${x.i===sel?" selected":""}>${esc(x.n)}</option>`).join("");
 const catFreq=(a,k)=>{const w=Date.now()-365*864e5,ra={},na={},g={};S.T.forEach(t=>{if(t.b||!t.c||kind(t)!==k)return;let c=cm[t.c];while(c){if(t.a===a){na[c.i]=(na[c.i]||0)+1;if(t.d>w)ra[c.i]=(ra[c.i]||0)+1}if(t.d>w)g[c.i]=(g[c.i]||0)+1;c=cm[c.p]}});return{ra,na,g}};
-const topCats=(a,k)=>{const w=Date.now()-365*864e5,r={},n={};S.T.forEach(t=>{if(t.a!==a||t.b||!t.c||kind(t)!==k||!cm[t.c]||cm[t.c].ar)return;n[t.c]=(n[t.c]||0)+1;if(t.d>w)r[t.c]=(r[t.c]||0)+1});return Object.keys(n).sort((x,y)=>(r[y]||0)-(r[x]||0)||n[y]-n[x]).slice(0,3)};
+const topCats=(a,k)=>{const w=Date.now()-365*864e5,r={},n={};S.T.forEach(t=>{if(t.a!==a||!t.c||kind(t)!==k||!cm[t.c]||cm[t.c].ar)return;n[t.c]=(n[t.c]||0)+1;if(t.d>w)r[t.c]=(r[t.c]||0)+1});return Object.keys(n).sort((x,y)=>(r[y]||0)-(r[x]||0)||n[y]-n[x]).slice(0,3)};
 let openC=new Set(),cq="",cpAdd=null,cpPre="",addP=null,addPre="",aqr="",acT=null,tcv=null;
 const cmatch=c=>c.n.toLowerCase().includes(cq);
 const cdesc=c=>S.C.some(x=>!x.ar&&x.p===c.i&&(cmatch(x)||cdesc(x)));
@@ -295,6 +295,14 @@ const accOpts=(sel,all,k)=>{const w=Date.now()-365*864e5,r={},n={};S.T.forEach(t
 const tabs=[["home","Home","home"],["add","Aggiungi","plusc"],["list","Movimenti","list"],["rep","Report","chart"],["acc","Conti","card"],["more","Altro","dots"]];
 let tab="home",editId=null,ch=[];
 function go(t){tab=t;aqr="";addP=null;tcv=null;render()}
+// Swipe orizzontale sul contenuto: scheda successiva/precedente, nell'ordine della barra
+let sw0=null;
+const swSkip=el=>{for(;el&&el!==document.body;el=el.parentElement){if(el.matches("input,select,textarea,canvas,.chips"))return true;
+  if(el.scrollWidth>el.clientWidth+2&&/auto|scroll/.test(getComputedStyle(el).overflowX))return true}return false}; // campi, grafici e contenuti che scorrono di lato
+document.addEventListener("touchstart",e=>{const p=e.touches[0];sw0=e.touches.length===1&&p.clientX>24&&p.clientX<innerWidth-24&&!swSkip(e.target)?{x:p.clientX,y:p.clientY,t:Date.now()}:null},{passive:true}); // bordi lasciati al gesto "indietro" del sistema
+document.addEventListener("touchend",e=>{if(!sw0)return;const p=e.changedTouches[0],dx=p.clientX-sw0.x,dy=p.clientY-sw0.y,dt=Date.now()-sw0.t;sw0=null;
+  if(Math.abs(dx)<70||Math.abs(dx)<2*Math.abs(dy)||dt>700||!$("#v").contains(e.target))return;
+  const k=tabs.findIndex(x=>x[0]===tab)+(dx<0?1:-1);if(k>=0&&k<tabs.length)go(tabs[k][0])},{passive:true});
 function acRun(){aqr=$("#ac-q").value;const t=$("#ac-tree");if(t&&acT)t.innerHTML=acT()}
 function acAdd(){addPre=($("#ac-q").value||"").trim();addP="";render()}
 function arcC(i,v){const br=x=>[x].concat(...S.C.filter(c=>c.p===x).map(c=>br(c.i))),ids=br(i);
@@ -348,16 +356,17 @@ function vAdd(){
   <input id="f-amt" class="amt" inputmode="decimal" placeholder="0,00" value="${amt}" autocomplete="off" style="margin-top:12px">
   <label>Conto</label><select id="f-a" onchange="accTouched=true;accCh()">${accOpts(a0,0,ek)}</select><div id="f-tp">${t?"":chips(a0)}</div>
   <div id="f-bw" class="${ek==="t"?"":"hide"}"><label>Verso il conto</label><select id="f-b">${toOpts(a0,b0)}</select></div>
-  <div id="f-cw" class="${ek==="t"?"hide":""}"><label>Categoria</label><input type="hidden" id="f-c" value="${c0||""}"><button class="b g" id="f-cb" onclick="cpOpen()" style="width:100%;text-align:left">${c0?esc(path(c0)):"no categoria"}</button><div id="f-cp" class="card hide" style="max-height:50vh;overflow:auto;margin:6px 0 0"></div></div>
+  <div id="f-cw"><label>Categoria</label><input type="hidden" id="f-c" value="${c0||""}"><button class="b g" id="f-cb" onclick="cpOpen()" style="width:100%;text-align:left">${c0?esc(path(c0)):"no categoria"}</button><div id="f-cp" class="card hide" style="max-height:50vh;overflow:auto;margin:6px 0 0"></div></div>
   <label>Data e ora</label><input id="f-d" type="datetime-local" value="${loc(t?t.d:Date.now())}">
   <label>Nota</label><input id="f-n" value="${esc(t?t.n:pr?pr.n:"")}" autocomplete="off">
-  <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><button class="b ic" style="flex:1;width:auto" title="${t?"Salva modifiche":"Aggiungi"}" aria-label="${t?"Salva modifiche":"Aggiungi"}" onclick="saveTx()">${ic("check",24)}</button>${t?"":`<button class="b g ic" style="flex:1;width:auto" title="Salva e nuovo" aria-label="Salva e nuovo" onclick="saveTx(1)">${ic("checkplus",24)}</button>`}${t?ib("x","editId=null;tab='list';render()","Annulla")+ib("repeat","mkRc()","Rendi ricorrente (ogni mese)")+ib("trash","delTx()","Elimina","d"):""}</div></div></div>
+  <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><button class="b ic" style="flex:1;width:auto" title="${t?"Salva modifiche":"Aggiungi"}" aria-label="${t?"Salva modifiche":"Aggiungi"}" onclick="saveTx()">${ic("check",24)}</button>${t?"":`<button class="b g ic" style="flex:1;width:auto" title="Salva e nuovo" aria-label="Salva e nuovo" onclick="saveTx(1)">${ic("checkplus",24)}</button>`+ib("rest","addReset()","Annulla e ricomincia")}${t?ib("x","editId=null;tab='list';render()","Annulla")+ib("repeat","mkRc()","Rendi ricorrente (ogni mese)")+ib("trash","delTx()","Elimina","d"):""}</div></div></div>
   </div>`;
   if(!t&&window.matchMedia&&matchMedia("(pointer:fine)").matches)setTimeout(()=>$("#f-amt").focus(),50); // niente focus sul telefono: non apre la tastiera da sola
 }
+function addReset(){pre=null;tpMore=false;render()} // ricarica il modulo con i valori predefiniti del tipo scelto
 function segset(){
   document.querySelectorAll("#seg button").forEach((b,i)=>b.classList.toggle("on","eit"[i]===ek));
-  $("#f-bw").classList.toggle("hide",ek!=="t");$("#f-cw").classList.toggle("hide",ek==="t");if(!editId){const cur=$("#f-a").value;$("#f-a").innerHTML=accOpts(accTouched?cur:accFor(ek),0,ek)}accCh();
+  $("#f-bw").classList.toggle("hide",ek!=="t");if(!editId){const cur=$("#f-a").value;$("#f-a").innerHTML=accOpts(accTouched?cur:accFor(ek),0,ek)}accCh();
 }
 function saveTx(nw){
   const v=pn($("#f-amt").value);
@@ -365,14 +374,14 @@ function saveTx(nw){
   const c=Math.round(v*100),a=$("#f-a").value,b=ek==="t"?$("#f-b").value:null;
   if(!a){toast("Crea prima un conto in “Conti”");return}
   if(ek==="t"&&(!b||b===a)){toast("Scegli un conto di destinazione diverso");return}
-  const o={i:editId||uid(),d:new Date($("#f-d").value||Date.now()).getTime(),a,b,c:ek==="t"?null:($("#f-c").value||null),x:ek==="i"?c:-c,y:ek==="t"?c:0,n:$("#f-n").value.trim(),s:"a",ins:editId?(S.T.find(x=>x.i===editId)||{}).ins:Date.now(),cl:editId?(S.T.find(x=>x.i===editId)||{}).cl:undefined};
+  const o={i:editId||uid(),d:new Date($("#f-d").value||Date.now()).getTime(),a,b,c:$("#f-c").value||null,x:ek==="i"?c:-c,y:ek==="t"?c:0,n:$("#f-n").value.trim(),s:"a",ins:editId?(S.T.find(x=>x.i===editId)||{}).ins:Date.now(),cl:editId?(S.T.find(x=>x.i===editId)||{}).cl:undefined};
   if(editId){S.T[S.T.findIndex(x=>x.i===editId)]=o}else S.T.push(o);
   S.L={a,c:o.c};editId=null;if(nw){save();toast("Salvato");render();return}F.a=a;F.m=loc(o.d).slice(0,7);F.q="";F.n=100;F.c=null;F.y="";F.rep=false;F.ids=null;tab="list";save();toast("Salvato");render();
 }
 function delTx(){S.T=S.T.filter(x=>x.i!==editId);S.D.push(editId);editId=null;tab="list";save();toast("Eliminato");render()}
 function edit(i){editId=i;tab="add";render()}
 function rows(l,sa,fa){return l.map(t=>{const k=kind(t),cn=t.c?path(t.c):"",an=(acc(t.a)||{}).n||"?";
-  const sub=k==="t"?`${esc(an)} → ${esc((acc(t.b)||{}).n||"?")}`:`${sa?esc(an)+" › ":""}${cn?esc(cn):"no categoria"}`;
+  const sub=k==="t"?`${esc(an)} → ${esc((acc(t.b)||{}).n||"?")}${cn?" › "+esc(cn):""}`:`${sa?esc(an)+" › ":""}${cn?esc(cn):"no categoria"}`;
   return `<div class="row" onclick="edit('${t.i}')"><div class="m"><b>${sub}${t.n?" ("+esc(t.n)+")":""}</b><small>${dt(t.d)}</small></div><div class="r ${k==="e"?"neg":k==="i"?"pos":k==="t"&&fa&&(t.a===fa||t.b===fa)?(t.a===fa?"neg":"pos"):""}">${eur(k==="t"?(fa&&t.a===fa?-Math.abs(t.x):fa&&t.b===fa?Math.abs(t.y):t.y):t.x)}</div><button class="b g ic sm" title="Duplica" aria-label="Duplica" onclick="event.stopPropagation();cloneTx('${t.i}')">${ic("copy",18)}</button></div>`}).join("")}
 
 /* ---------- Movimenti ---------- */
