@@ -1,0 +1,48 @@
+# Deploys the app to GitHub Pages, filling in the configuration from the repository variables
+# (Settings → Secrets and variables → Actions → Variables). The code only holds the __…__ placeholders.
+# Empty or missing variable: the app hides the matching sync backend (Drive or Firebase). See SETUP.md.
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build site with configuration
+        env:
+          G_CLIENT: ${{ vars.GOOGLE_CLIENT_ID }}
+          FB_KEY: ${{ vars.FB_API_KEY }}
+          FB_DB: ${{ vars.FB_DATABASE_URL }}
+        run: |
+          mkdir _site
+          # app files only: no dati/, tools/ or docs
+          cp -r index.html sw.js manifest.webmanifest icons _site/
+          sed -i -e "s|__G_CLIENT__|${G_CLIENT}|" -e "s|__FB_KEY__|${FB_KEY}|" -e "s|__FB_DB__|${FB_DB}|" _site/index.html
+          for v in G_CLIENT FB_KEY FB_DB; do [ -n "${!v}" ] || echo "::warning::variable ${v} is empty: the sync backend that needs it stays hidden"; done
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

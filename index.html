@@ -81,7 +81,7 @@ const loc=ms=>{const d=new Date(ms-new Date(ms).getTimezoneOffset()*6e4);return 
 const uid=()=>"n"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 let toastT;function toast(m){const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(toastT);toastT=setTimeout(()=>t.style.display="none",2400)}
 // ---- Sincronizzazione Google Drive (cartella nascosta dell'app) ----
-const GID="436912234125-5b27vc5p7f2si465as87vgmlrvfpjgls.apps.googleusercontent.com",GSC="https://www.googleapis.com/auth/drive.appdata",GF="cassetto-dati.json",GK="cassetto_gsync";
+const GID="__G_CLIENT__",GSC="https://www.googleapis.com/auth/drive.appdata",GF="cassetto-dati.json",GK="cassetto_gsync";
 const COLS=["A","C","T","RC","LN"];let sig={},um={};
 function snap(){sig={};um={};for(const c of COLS)for(const x of (S[c]||[])){const{u,...r}=x;sig[c+x.i]=JSON.stringify(r);um[c+x.i]=u||0}}
 function stamp(){const now=Date.now(),seen=new Set();S.G=S.G||{};
@@ -128,8 +128,10 @@ async function drvWrite(out){
   const b="cassettoB";return gf("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+b},
     body:"--"+b+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify({name:GF,parents:["appDataFolder"]})+"\r\n--"+b+"\r\nContent-Type: application/json\r\n\r\n"+out+"\r\n--"+b+"--"})}
 // ---- Firebase: Auth + Realtime Database via REST (nessuna libreria). Login Google una volta, poi rinnovo senza finestre ----
-const FB={key:"AIzaSyCo3b-X4652Cqsa6P-onfNh-MWmvGU3HJI",db:"https://financial-24134-default-rtdb.europe-west1.firebasedatabase.app"}; // apiKey e databaseURL del progetto Firebase: dati pubblici, i dati li proteggono le regole del database
-const FK="cassetto_fb",fbOk=()=>!!(FB.key&&FB.db);
+// Valori inseriti alla pubblicazione dal workflow (.github/workflows/deploy.yml) dalle variabili del repository: nel codice restano i segnaposto __…__
+const FB={key:"__FB_KEY__",db:"__FB_DB__"}; // apiKey e databaseURL del progetto Firebase: dati pubblici, i dati li proteggono le regole del database
+const cfg=v=>!!v&&!v.startsWith("__"),gIdOk=()=>cfg(GID); // false se il valore non è stato inserito alla pubblicazione
+const FK="cassetto_fb",fbOk=()=>gIdOk()&&cfg(FB.key)&&cfg(FB.db);
 let fbS=null;try{fbS=JSON.parse(localStorage.getItem(FK)||"null")}catch(e){} // {r: token di rinnovo, u: id utente, t: token d'identità, e: scadenza}
 function fbSave(){try{fbS?localStorage.setItem(FK,JSON.stringify(fbS)):localStorage.removeItem(FK)}catch(e){}}
 async function fbPost(u,body,form){const r=await fetch(u,{method:"POST",headers:{"Content-Type":form?"application/x-www-form-urlencoded":"application/json"},body});
@@ -154,7 +156,7 @@ const gMode=()=>gOn()==="fb"?"fb":"drive",gName=()=>gMode()==="fb"?"Firebase":"G
 const gCan=()=>gMode()==="fb"?!!(fbS&&fbS.r):gValid(); // sincronizzabile senza finestre di Google
 async function gSync(silent,m){
   if(gBusy){gDirty=true;return}gBusy=true;gSet("Sincronizzazione…");m=m||gMode();const fb=m==="fb";
-  try{if(fb&&!fbOk())throw new Error("Firebase non configurato");
+  try{if(fb&&!fbOk())throw new Error("Firebase non configurato");if(!fb&&!gIdOk())throw new Error("Google Drive non configurato");
     await(fb?fbAuth(silent):gAuth(silent));stamp();
     const raw=await(fb?fbRead():drvRead());
     if(raw.trim()){const R=JSON.parse(raw);if(R&&R.T){const b=JSON.stringify(S);mergeIn(R);snap();persist();if(JSON.stringify(S)!==b)render()}}
@@ -168,7 +170,7 @@ function syncSoon(){if(!gOn())return;clearTimeout(gT);gT=setTimeout(()=>gSync(tr
 function gOff(){try{localStorage.removeItem(GK);localStorage.removeItem(GT)}catch(e){}if(gTok&&window.google&&google.accounts)google.accounts.oauth2.revoke(gTok);gTok=null;fbS=null;fbSave();gMsg="Non collegato";render()}
 const syncCard=()=>`<div class="card"><h2>Sincronizzazione</h2><p class="mut" id="sy">${esc(gMsg||(gOn()?gName()+" collegato":"Non collegato"))}</p><div style="display:flex;gap:10px">${gOn()
   ?ib(gIc(),"gSync(false)","Sincronizza ora")+ib("x","gOff()","Scollega "+gName())
-  :ib("cloud","gSync(false,'drive')","Collega Google Drive")+(fbOk()?ib("db","gSync(false,'fb')","Collega Firebase"):"")}</div></div>`;
+  :(gIdOk()?ib("cloud","gSync(false,'drive')","Collega Google Drive"):"")+(fbOk()?ib("db","gSync(false,'fb')","Collega Firebase"):"")}</div></div>`;
 gTokLoad();if(gOn())setTimeout(()=>gSync(true),1500);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&gOn()&&gCan()&&Date.now()-gLast>12e4)gSync(true)});
 P.cloud='<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>';P.db='<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/>';P.home='<path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/>';P.edit='<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>';
