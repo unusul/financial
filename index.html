@@ -100,7 +100,9 @@ function mergeIn(R){
     S[c]=[...m.values()].filter(x=>!(G[c+x.i]&&G[c+x.i]>=(x.u||0)))}
   S.G=G;S.D=[...new Set([...(R.D||[]),...(S.D||[])])];S.M={...(R.M||{}),...(S.M||{})};S.L={...(R.L||{}),...(S.L||{})}}
 snap();
-const persist=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){toast("Salvataggio non riuscito: spazio del browser pieno")}};
+const persist=()=>{try{localStorage.setItem(K,JSON.stringify(S));localStorage.setItem(LD,"1")}catch(e){toast("Salvataggio non riuscito: spazio del browser pieno")}};
+const LD="cassetto_ld",SEEN="cassetto_seen"; // LD: modifiche locali non ancora sincronizzate · SEEN: versione dell'archivio vista all'ultima sincronizzazione
+const lsG=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsS=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
 const save=()=>{stamp();persist();syncSoon()};
 let gTok=null,gExp=0,gBusy=false,gDirty=false,gMsg="",gT,gLast=0;
 const GT="cassetto_gtok",gValid=()=>!!gTok&&Date.now()<gExp-6e4;
@@ -120,14 +122,17 @@ function gAuth(silent){if(gValid())return Promise.resolve(gTok);
 async function gf(u,o){const r=await fetch(u,{...o,headers:{...(o&&o.headers),Authorization:"Bearer "+gTok}});
   if(r.status===401){gTok=null;try{localStorage.removeItem(GT)}catch(e){}throw new Error("sessione scaduta")}if(!r.ok)throw new Error("Drive "+r.status);return r}
 let gId=null;
-async function drvRead(){
-  const l=await(await gf("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&orderBy=createdTime&fields=files(id)&q="+encodeURIComponent("name='"+GF+"'"))).json();
-  gId=l.files&&l.files[0]&&l.files[0].id;
-  return gId?await(await gf("https://www.googleapis.com/drive/v3/files/"+gId+"?alt=media")).text():""}
-async function drvWrite(out){
-  if(gId)return gf("https://www.googleapis.com/upload/drive/v3/files/"+gId+"?uploadType=media",{method:"PATCH",headers:{"Content-Type":"application/json"},body:out});
-  const b="cassettoB";return gf("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+b},
-    body:"--"+b+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify({name:GF,parents:["appDataFolder"]})+"\r\n--"+b+"\r\nContent-Type: application/json\r\n\r\n"+out+"\r\n--"+b+"--"})}
+const DQ="https://www.googleapis.com/drive/v3/files",DU="https://www.googleapis.com/upload/drive/v3/files";
+async function drvHead(){ // id del file dati e sua versione (Drive la incrementa a ogni scrittura)
+  const l=await(await gf(DQ+"?spaces=appDataFolder&orderBy=createdTime&fields=files(id,version)&q="+encodeURIComponent("name='"+GF+"'"))).json(),f=l.files&&l.files[0];
+  gId=f?f.id:null;return f?"d"+f.version:null}
+const drvRead=async()=>gId?(await gf(DQ+"/"+gId+"?alt=media")).text():"";
+async function drvPut(name,body,id,props,ct){ // crea o aggiorna un file nella cartella nascosta dell'app; restituisce {id,version}
+  ct=ct||"application/json";
+  if(id)return(await gf(DU+"/"+id+"?uploadType=media&fields=id,version",{method:"PATCH",headers:{"Content-Type":ct},body})).json();
+  const b="cassettoB";return(await gf(DU+"?uploadType=multipart&fields=id,version",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+b},
+    body:"--"+b+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify({name,parents:["appDataFolder"],...(props?{appProperties:props}:{})})+"\r\n--"+b+"\r\nContent-Type: "+ct+"\r\n\r\n"+body+"\r\n--"+b+"--"})).json()}
+async function drvWrite(out){const f=await drvPut(GF,out,gId);gId=f.id;return "d"+f.version}
 // ---- Firebase: Auth + Realtime Database via REST (nessuna libreria). Login Google una volta, poi rinnovo senza finestre ----
 // Valori inseriti alla pubblicazione dal workflow (.github/workflows/deploy.yml) dalle variabili del repository: nel codice restano i segnaposto __…__
 const FB={key:"__FB_KEY__",db:"__FB_DB__"}; // apiKey e databaseURL del progetto Firebase: dati pubblici, i dati li proteggono le regole del database
@@ -146,29 +151,61 @@ async function fbAuth(silent){
   const g=await gReq("openid email");
   const j=await fbPost("https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key="+FB.key,JSON.stringify({postBody:"access_token="+g.access_token+"&providerId=google.com",requestUri:location.href.split("#")[0],returnSecureToken:true}));
   fbS={r:j.refreshToken,u:j.localId,t:j.idToken,e:Date.now()+(+j.expiresIn||3600)*1e3};fbSave();return fbS.t}
-async function fbF(o){const r=await fetch(FB.db.replace(/\/+$/,"")+"/u/"+fbS.u+".json?auth="+encodeURIComponent(fbS.t),o);
+async function fbF(p,o){const r=await fetch(FB.db.replace(/\/+$/,"")+"/u/"+fbS.u+(p?"/"+p:"")+".json?auth="+encodeURIComponent(fbS.t),o);
   if(r.status===401){fbS.t=null;fbSave();throw new Error("sessione scaduta")}if(!r.ok)throw new Error("Firebase "+r.status);return r.json()}
 const zip=s=>{const b=pako.gzip(s);let r="";for(let i=0;i<b.length;i+=32768)r+=String.fromCharCode.apply(null,b.subarray(i,i+32768));return btoa(r)};
 const unz=z=>pako.ungzip(Uint8Array.from(atob(z),c=>c.charCodeAt(0)),{to:"string"});
-const fbRead=async()=>{const z=await fbF();return z?unz(z):""};
-const fbWrite=out=>fbF({method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(zip(out))});
+// Nodo /u/<uid>: d = dati compressi, m = {t: ora dell'ultima scrittura}, b e bi = backup e loro elenco. Prima era la sola stringa compressa
+let fbOld=false; // nodo ancora nel formato precedente: alla prossima scrittura va sostituito per intero
+const fbJ=(p,method,o)=>fbF(p,{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(o)});
+async function fbHead(){const m=await fbF("m");return m&&m.t?"f"+m.t:null}
+async function fbRead(){const z=await fbF("d");if(z)return unz(z);
+  const v=await fbF("");fbOld=typeof v==="string";return fbOld?unz(v):""} // niente "d": nodo vuoto o formato precedente
+async function fbWrite(out){const t=Date.now(),o={d:zip(out),m:{t}};await fbJ("",fbOld?"PUT":"PATCH",o);fbOld=false;return "f"+t}
 // ---- archivio scelto: Google Drive o Firebase (uno solo alla volta) ----
 const gMode=()=>gOn()==="fb"?"fb":"drive",gName=()=>gMode()==="fb"?"Firebase":"Google Drive",gIc=()=>gMode()==="fb"?"db":"cloud";
 const gCan=()=>gMode()==="fb"?!!(fbS&&fbS.r):gValid(); // sincronizzabile senza finestre di Google
+// Prima legge solo la versione dell'archivio: se è quella vista all'ultima sincronizzazione nessun altro dispositivo ha scritto,
+// quindi niente download; si scrive solo se ci sono modifiche locali. Restituisce true se riuscita.
 async function gSync(silent,m){
-  if(gBusy){gDirty=true;return}gBusy=true;gSet("Sincronizzazione…");m=m||gMode();const fb=m==="fb";
+  if(gBusy){gDirty=true;return}gBusy=true;gSet("Sincronizzazione…");m=m||gMode();const fb=m==="fb";let ok=false;
   try{if(fb&&!fbOk())throw new Error("Firebase non configurato");if(!fb&&!gIdOk())throw new Error("Google Drive non configurato");
     await(fb?fbAuth(silent):gAuth(silent));stamp();
-    const raw=await(fb?fbRead():drvRead());
-    if(raw.trim()){const R=JSON.parse(raw);if(R&&R.T){const b=JSON.stringify(S);mergeIn(R);snap();persist();if(JSON.stringify(S)!==b)render()}}
-    const out=JSON.stringify(S);
-    if(out!==raw)await(fb?fbWrite(out):drvWrite(out));
+    const hv=await(fb?fbHead():drvHead()),wr=out=>fb?fbWrite(out):drvWrite(out);let tag=hv;
+    if(hv&&lsG(SEEN)===m+hv){if(lsG(LD)==="1")tag=await wr(JSON.stringify(S))}
+    else{const raw=await(fb?fbRead():drvRead());
+      if(raw.trim()){const R=JSON.parse(raw);if(R&&R.T){const b=JSON.stringify(S);mergeIn(R);snap();persist();if(JSON.stringify(S)!==b)render()}}
+      const out=JSON.stringify(S);if(out!==raw||!hv)tag=await wr(out)}
+    lsS(SEEN,tag?m+tag:null);lsS(LD,null);
     const was=gOn();try{localStorage.setItem(GK,m)}catch(e){}
-    gLast=Date.now();gSet("Sincronizzato alle "+new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}));if(!was)render();
+    gLast=Date.now();ok=true;gSet("Sincronizzato alle "+new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}));if(!was)render();
   }catch(e){gSet(e.message==="silent"?"Da sincronizzare: tocca la nuvola":"Sincronizzazione non riuscita: "+e.message)}
-  finally{gBusy=false;if(gDirty){gDirty=false;syncSoon()}}}
+  finally{gBusy=false;if(gDirty){gDirty=false;syncSoon()}}return ok}
 function syncSoon(){if(!gOn())return;clearTimeout(gT);gT=setTimeout(()=>gSync(true),4000)}
-function gOff(){try{localStorage.removeItem(GK);localStorage.removeItem(GT)}catch(e){}if(gTok&&window.google&&google.accounts)google.accounts.oauth2.revoke(gTok);gTok=null;fbS=null;fbSave();gMsg="Non collegato";render()}
+// ---- Backup a mano nell'archivio collegato: ultime BKN copie complete e compresse, ripristinabili ----
+const BKN=10;let bkL=null,bkM="";
+function bkMsg(m){bkM=m;const e=$("#bkm");if(e)e.textContent=m}
+async function bkList(){
+  if(gMode()==="fb"){const o=await fbF("bi")||{};return Object.keys(o).map(k=>({k,t:+o[k].t||0,n:+o[k].n||0})).sort((a,b)=>b.t-a.t)}
+  const l=await(await gf(DQ+"?spaces=appDataFolder&pageSize=100&fields=files(id,appProperties)&q="+encodeURIComponent("name contains 'cassetto-backup-'"))).json();
+  return(l.files||[]).map(f=>({k:f.id,t:+(f.appProperties||{}).t||0,n:+(f.appProperties||{}).n||0})).sort((a,b)=>b.t-a.t)}
+const bkDel=o=>gMode()==="fb"?fbJ("","PATCH",{["b/"+o.k]:null,["bi/"+o.k]:null}):gf(DQ+"/"+o.k,{method:"DELETE"});
+async function bkSend(){bkMsg("Invio del backup…");
+  try{if(!await gSync(false))throw new Error(gBusy?"sincronizzazione in corso, riprova":gMsg.replace(/^Sincronizzazione non riuscita: /,""));
+    const t=Date.now(),z=zip(JSON.stringify(S)),n=S.T.length;
+    if(gMode()==="fb")await fbJ("","PATCH",{["b/"+t]:z,["bi/"+t]:{t,n}});
+    else await drvPut("cassetto-backup-"+t+".txt",z,null,{t:String(t),n:String(n)},"text/plain");
+    const l=await bkList();for(const o of l.slice(BKN))await bkDel(o);
+    bkL=l.slice(0,BKN);bkM="Backup inviato a "+gName()+": "+bkL.length+(bkL.length===1?" copia conservata":" copie conservate");render()
+  }catch(e){bkMsg("Backup non riuscito: "+e.message)}}
+async function bkShow(){if(bkL){bkL=null;bkM="";render();return}bkMsg("Carico l’elenco dei backup…");
+  try{await(gMode()==="fb"?fbAuth(false):gAuth(false));bkL=await bkList();bkM=bkL.length?"":"Nessun backup in "+gName();render()}catch(e){bkMsg("Elenco non disponibile: "+e.message)}}
+async function bkPick(i){const o=bkL&&bkL[i];if(!o)return;bkMsg("Scarico il backup…");
+  try{const z=gMode()==="fb"?await fbF("b/"+o.k):await(await gf(DQ+"/"+o.k+"?alt=media")).text(),j=JSON.parse(unz(z));
+    if(!Array.isArray(j.T)||!Array.isArray(j.A))throw new Error("copia non valida");
+    bkM="";dm={k:"json",j,name:"il backup del "+bkDt(o.t)};render();scrollTo(0,0)}catch(e){bkMsg("Ripristino non riuscito: "+e.message)}}
+const bkDt=t=>new Date(t).toLocaleString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+function gOff(){try{localStorage.removeItem(GK);localStorage.removeItem(GT);localStorage.removeItem(SEEN)}catch(e){}bkL=null;bkM="";if(gTok&&window.google&&google.accounts)google.accounts.oauth2.revoke(gTok);gTok=null;fbS=null;fbSave();gMsg="Non collegato";render()}
 const syncCard=()=>`<div class="card"><h2>Sincronizzazione</h2><p class="mut" id="sy">${esc(gMsg||(gOn()?gName()+" collegato":"Non collegato"))}</p><div style="display:flex;gap:10px">${gOn()
   ?ib(gIc(),"gSync(false)","Sincronizza ora")+ib("x","gOff()","Scollega "+gName())
   :(gIdOk()?ib("cloud","gSync(false,'drive')","Collega Google Drive"):"")+(fbOk()?ib("db","gSync(false,'fb')","Collega Firebase"):"")}</div></div>`;
@@ -599,12 +636,14 @@ function datiCard(){
   return `<div class="card"><h2>Dati</h2>${w}
   ${row("Migrazione da Financisto","Importa il file .backup: i movimenti già importati vengono aggiornati senza duplicati, quelli creati qui restano intatti.",fb("fi","Importa backup di Financisto"))}
   ${row("Importa JSON","Sostituisce tutti i dati con quelli del file: i dati attuali vengono cancellati.",fb("fj","Importa JSON","application/json,.json"))}
+  ${row("Backup online",gOn()?"Copia completa dei dati in "+gName()+": restano le ultime "+BKN+". Il ripristino sostituisce tutti i dati, come Importa JSON.":"Collega Google Drive o Firebase in Sincronizzazione per inviare e ripristinare copie dei dati.",gOn()?ib("up","bkSend()","Invia backup","p")+ib("rest","bkShow()",bkL?"Chiudi l’elenco dei backup":"Ripristina da un backup"):"")}
+  <p class="mut" id="bkm" style="margin:0">${esc(bkM)}</p>${bkL&&bkL.length?bkL.map((o,i)=>`<div class="row" style="cursor:default"><div class="m"><b>${bkDt(o.t)}</b><small>${o.n} movimenti</small></div>${ib("rest","bkPick("+i+")","Ripristina questo backup","d")}</div>`).join(""):""}
   ${row("Esporta JSON","Copia completa dei dati, per backup o per spostarli su un altro dispositivo.",ib("dl","exp()","Esporta JSON"))}
   ${row("Esporta CSV","Un movimento per riga, da aprire con Excel o Fogli Google.",ib("dl","expCsv()","Esporta CSV"))}
   ${row("Cancella dati","Elimina tutto da questo dispositivo.",ib("trash","dm={k:'del'};render()","Cancella dati","d"))}
   <p class="mut" id="fm"></p></div>`}
 function dmJson(){const j=dm.j;dm=null;try{localStorage.setItem(K+"_prev",JSON.stringify(S))}catch(e){}
-  S={...NEWS(),...j};S.G={};S.E=Date.now();snap();persist();syncSoon();toast("Dati sostituiti dal file");render()}
+  S={...NEWS(),...j};S.G={};S.E=Date.now();snap();persist();syncSoon();toast("Dati sostituiti");render()}
 function delAll(){dm=null;try{localStorage.removeItem(K+"_prev")}catch(e){}
   S=NEWS();S.G={};S.E=Date.now();snap();persist();syncSoon();toast("Dati cancellati");render()}
 function expCsv(){
