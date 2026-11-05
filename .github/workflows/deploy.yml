@@ -36,6 +36,10 @@ jobs:
           # app files only: no dati/, tools/ or docs
           cp -r index.html sw.js manifest.webmanifest icons _site/
           sed -i -e "s|__G_CLIENT__|${G_CLIENT}|" -e "s|__FB_KEY__|${FB_KEY}|" -e "s|__FB_DB__|${FB_DB}|" _site/index.html
+          # version shown in Altro: VERSIONE from sw.js plus commit and build time
+          APPV=$(sed -n 's/^const VERSIONE = "\(.*\)";.*/\1/p' sw.js)
+          BUILD="${GITHUB_SHA::7} del $(TZ=Europe/Rome date '+%d/%m/%Y %H:%M')"
+          sed -i -e "s|__APPV__|${APPV}|" -e "s|__BUILD__|${BUILD}|" _site/index.html
           for v in G_CLIENT FB_KEY FB_DB; do [ -n "${!v}" ] || echo "::warning::variable ${v} is empty: the sync backend that needs it stays hidden"; done
 
       - uses: actions/configure-pages@v5

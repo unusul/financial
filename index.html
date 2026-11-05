@@ -81,6 +81,7 @@ const loc=ms=>{const d=new Date(ms-new Date(ms).getTimezoneOffset()*6e4);return 
 const uid=()=>"n"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 let toastT;function toast(m){const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(toastT);toastT=setTimeout(()=>t.style.display="none",2400)}
 // ---- Sincronizzazione Google Drive (cartella nascosta dell'app) ----
+const APPV="__APPV__",BUILD="__BUILD__"; // versione (VERSIONE di sw.js) e build: inseriti alla pubblicazione
 const GID="__G_CLIENT__",GSC="https://www.googleapis.com/auth/drive.appdata",GF="cassetto-dati.json",GK="cassetto_gsync";
 const COLS=["A","C","T","RC","LN"];let sig={},um={};
 function snap(){sig={};um={};for(const c of COLS)for(const x of (S[c]||[])){const{u,...r}=x;sig[c+x.i]=JSON.stringify(r);um[c+x.i]=u||0}}
@@ -173,7 +174,7 @@ const syncCard=()=>`<div class="card"><h2>Sincronizzazione</h2><p class="mut" id
   :(gIdOk()?ib("cloud","gSync(false,'drive')","Collega Google Drive"):"")+(fbOk()?ib("db","gSync(false,'fb')","Collega Firebase"):"")}</div></div>`;
 gTokLoad();if(gOn())setTimeout(()=>gSync(true),1500);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&gOn()&&gCan()&&Date.now()-gLast>12e4)gSync(true)});
-P.cloud='<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>';P.db='<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/>';P.home='<path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/>';P.edit='<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>';
+P.xo='<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>';P.cloud='<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>';P.db='<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/>';P.home='<path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/>';P.edit='<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>';
 // ---- fine sincronizzazione ----
 let cm={};const path=i=>{let p=[],c=cm[i];while(c){p.unshift(c.n);c=cm[c.p]}return p.join(" › ")};
 const topc=i=>{let c=cm[i];while(c&&c.p&&cm[c.p])c=cm[c.p];return c};
@@ -345,10 +346,10 @@ function vHome(){
 function goAcc(i){F.a=i;F.m="";F.y="";F.q="";F.c=null;F.cl="";F.ids=null;F.rep=false;F.n=100;tab="list";render()}
 
 /* ---------- Aggiungi / modifica ---------- */
-let ek="e",catTouched=false,pre=null,tpMore=false,tpAll=false,tpK="e",accTouched=false,mgSrc=null,rcSrc=null,PT={a:"",r:"12"};
+let xoF=false,ek="e",catTouched=false,pre=null,tpMore=false,tpAll=false,tpK="e",accTouched=false,mgSrc=null,rcSrc=null,PT={a:"",r:"12"};
 function vAdd(){
   const t=editId?S.T.find(x=>x.i===editId):null,pr=editId?null:pre;pre=null;catTouched=!!pr;accTouched=!!pr;
-  if(t)ek=kind(t);if(pr)ek=pr.k;
+  if(t)ek=kind(t);if(pr)ek=pr.k;xoF=!!(t&&t.xo);
   const L=S.L,a0=t?t.a:pr?pr.a:accFor(ek),c0=t?t.c:pr?pr.c:defCat(a0,ek),b0=t?t.b:pr?pr.b:defTo(a0);
   const amt=t?(Math.abs(t.x)/100).toString().replace(".",","):pr?pr.amt:"";
   $("#v").innerHTML=`<div class="grid c2"><div><h1>${t?"Modifica movimento":"Nuovo movimento"}</h1>${t?"":dueCard()}<div class="card">
@@ -359,10 +360,13 @@ function vAdd(){
   <div id="f-cw"><label>Categoria</label><input type="hidden" id="f-c" value="${c0||""}"><button class="b g" id="f-cb" onclick="cpOpen()" style="width:100%;text-align:left">${c0?esc(path(c0)):"no categoria"}</button><div id="f-cp" class="card hide" style="max-height:50vh;overflow:auto;margin:6px 0 0"></div></div>
   <label>Data e ora</label><input id="f-d" type="datetime-local" value="${loc(t?t.d:Date.now())}">
   <label>Nota</label><input id="f-n" value="${esc(t?t.n:pr?pr.n:"")}" autocomplete="off">
-  <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><button class="b ic" style="flex:1;width:auto" title="${t?"Salva modifiche":"Aggiungi"}" aria-label="${t?"Salva modifiche":"Aggiungi"}" onclick="saveTx()">${ic("check",24)}</button>${t?"":`<button class="b g ic" style="flex:1;width:auto" title="Salva e nuovo" aria-label="Salva e nuovo" onclick="saveTx(1)">${ic("checkplus",24)}</button>`+ib("rest","addReset()","Annulla e ricomincia")}${t?ib("x","editId=null;tab='list';render()","Annulla")+ib("repeat","mkRc()","Rendi ricorrente (ogni mese)")+ib("trash","delTx()","Elimina","d"):""}</div></div></div>
+  <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><button class="b ic" style="flex:1;width:auto" title="${t?"Salva modifiche":"Aggiungi"}" aria-label="${t?"Salva modifiche":"Aggiungi"}" onclick="saveTx()">${ic("check",24)}</button>${t?"":`<button class="b g ic" style="flex:1;width:auto" title="Salva e nuovo" aria-label="Salva e nuovo" onclick="saveTx(1)">${ic("checkplus",24)}</button>`+ib("rest","addReset()","Annulla e ricomincia")}${xoBtn()}${t?ib("x","editId=null;tab='list';render()","Annulla")+ib("repeat","mkRc()","Rendi ricorrente (ogni mese)")+ib("trash","delTx()","Elimina","d"):""}</div></div></div>
   </div>`;
   if(!t&&window.matchMedia&&matchMedia("(pointer:fine)").matches)setTimeout(()=>$("#f-amt").focus(),50); // niente focus sul telefono: non apre la tastiera da sola
 }
+const xoTit=()=>xoF?"Straordinaria: tocca per togliere il segno":"Segna come spesa straordinaria (esce dai report)";
+const xoBtn=()=>`<button class="b ${xoF?"p":"g"} ic" id="f-xo" title="${xoTit()}" aria-label="${xoTit()}" aria-pressed="${xoF}" onclick="xoTog()">${ic("xo",22)}</button>`;
+function xoTog(){xoF=!xoF;$("#f-xo").outerHTML=xoBtn()}
 function addReset(){pre=null;tpMore=false;render()} // ricarica il modulo con i valori predefiniti del tipo scelto
 function segset(){
   document.querySelectorAll("#seg button").forEach((b,i)=>b.classList.toggle("on","eit"[i]===ek));
@@ -374,7 +378,7 @@ function saveTx(nw){
   const c=Math.round(v*100),a=$("#f-a").value,b=ek==="t"?$("#f-b").value:null;
   if(!a){toast("Crea prima un conto in “Conti”");return}
   if(ek==="t"&&(!b||b===a)){toast("Scegli un conto di destinazione diverso");return}
-  const o={i:editId||uid(),d:new Date($("#f-d").value||Date.now()).getTime(),a,b,c:$("#f-c").value||null,x:ek==="i"?c:-c,y:ek==="t"?c:0,n:$("#f-n").value.trim(),s:"a",ins:editId?(S.T.find(x=>x.i===editId)||{}).ins:Date.now(),cl:editId?(S.T.find(x=>x.i===editId)||{}).cl:undefined};
+  const o={i:editId||uid(),d:new Date($("#f-d").value||Date.now()).getTime(),a,b,c:$("#f-c").value||null,x:ek==="i"?c:-c,y:ek==="t"?c:0,n:$("#f-n").value.trim(),s:"a",ins:editId?(S.T.find(x=>x.i===editId)||{}).ins:Date.now(),cl:editId?(S.T.find(x=>x.i===editId)||{}).cl:undefined,xo:xoF?1:editId&&(S.T.find(x=>x.i===editId)||{}).xo===0?0:undefined}; // xo: 1 straordinaria, 0 scartata dai suggerimenti
   if(editId){S.T[S.T.findIndex(x=>x.i===editId)]=o}else S.T.push(o);
   S.L={a,c:o.c};editId=null;if(nw){save();toast("Salvato");render();return}F.a=a;F.m=loc(o.d).slice(0,7);F.q="";F.n=100;F.c=null;F.y="";F.rep=false;F.ids=null;tab="list";save();toast("Salvato");render();
 }
@@ -382,7 +386,7 @@ function delTx(){S.T=S.T.filter(x=>x.i!==editId);S.D.push(editId);editId=null;ta
 function edit(i){editId=i;tab="add";render()}
 function rows(l,sa,fa){return l.map(t=>{const k=kind(t),cn=t.c?path(t.c):"",an=(acc(t.a)||{}).n||"?";
   const sub=k==="t"?`${esc(an)} → ${esc((acc(t.b)||{}).n||"?")}${cn?" › "+esc(cn):""}`:`${sa?esc(an)+" › ":""}${cn?esc(cn):"no categoria"}`;
-  return `<div class="row" onclick="edit('${t.i}')"><div class="m"><b>${sub}${t.n?" ("+esc(t.n)+")":""}</b><small>${dt(t.d)}</small></div><div class="r ${k==="e"?"neg":k==="i"?"pos":k==="t"&&fa&&(t.a===fa||t.b===fa)?(t.a===fa?"neg":"pos"):""}">${eur(k==="t"?(fa&&t.a===fa?-Math.abs(t.x):fa&&t.b===fa?Math.abs(t.y):t.y):t.x)}</div><button class="b g ic sm" title="Duplica" aria-label="Duplica" onclick="event.stopPropagation();cloneTx('${t.i}')">${ic("copy",18)}</button></div>`}).join("")}
+  return `<div class="row" onclick="edit('${t.i}')"><div class="m"><b>${t.xo?`<span title="Straordinaria" style="color:var(--acc)">${ic("xo",14)}</span> `:""}${sub}${t.n?" ("+esc(t.n)+")":""}</b><small>${dt(t.d)}</small></div><div class="r ${k==="e"?"neg":k==="i"?"pos":k==="t"&&fa&&(t.a===fa||t.b===fa)?(t.a===fa?"neg":"pos"):""}">${eur(k==="t"?(fa&&t.a===fa?-Math.abs(t.x):fa&&t.b===fa?Math.abs(t.y):t.y):t.x)}</div><button class="b g ic sm" title="Duplica" aria-label="Duplica" onclick="event.stopPropagation();cloneTx('${t.i}')">${ic("copy",18)}</button></div>`}).join("")}
 
 /* ---------- Movimenti ---------- */
 /* Selettore del mese: quello nativo del browser (a scorrimento sul telefono) dove esiste, altrimenti due menu mese/anno */
@@ -426,16 +430,18 @@ function lrows(){
 
 /* ---------- Report ---------- */
 let RG=[];
-let R={sc:"m",m:loc(Date.now()).slice(0,7),y:loc(Date.now()).slice(0,4)};
+let R={sc:"m",m:loc(Date.now()).slice(0,7),y:loc(Date.now()).slice(0,4),xo:true}; // xo: escludi le spese straordinarie
+function xoRow(l){const v=l.reduce((s,t)=>s+Math.abs(t.x),0),tt=R.xo?"Spese straordinarie escluse: tocca per includerle":"Spese straordinarie incluse: tocca per escluderle";
+  return `<div style="grid-column:1/-1;display:flex;align-items:center;gap:10px"><span class="mut" style="flex:1">${R.xo?(l.length?(l.length===1?"Esclusa 1 spesa straordinaria":"Escluse "+l.length+" spese straordinarie")+" del periodo: "+eur(v):"Spese straordinarie escluse (nessuna nel periodo)"):"Spese straordinarie incluse"+(l.length?": "+l.length+" nel periodo, "+eur(v):"")}</span><button class="b ${R.xo?"p":"g"} ic sm" title="${tt}" aria-label="${tt}" aria-pressed="${R.xo}" onclick="R.xo=!R.xo;render()">${ic("xo",18)}</button></div>`}
 function vRep(){
   RG=[];
   const gids=k=>k==="-"?["-"]:S.C.filter(c=>{const tp=topc(c.i);return tp&&tp.i===k}).map(c=>c.i);
   const rb=i=>`<button class="b g ic sm" title="Vedi i movimenti" aria-label="Vedi i movimenti" onclick="event.stopPropagation();repGo(${i})">${ic("list",16)}</button>`;
-  const inc=new Set(S.A.filter(a=>a.tot).map(a=>a.i)),T=S.T.filter(t=>!t.b&&inc.has(t.a));
+  const inc=new Set(S.A.filter(a=>a.tot).map(a=>a.i)),T=S.T.filter(t=>!t.b&&inc.has(t.a)&&!(R.xo&&t.xo)),XO=S.T.filter(t=>t.xo&&!t.b&&inc.has(t.a));
   const ym=t=>loc(t.d).slice(0,7),yrs=[...new Set(T.map(t=>ym(t).slice(0,4)).concat(R.y))].sort().reverse();
   const per=t=>R.sc==="a"||(R.sc==="y"?ym(t).slice(0,4)===R.y:ym(t)===R.m);
   const flt=R.sc==="m"?`<label>Mese</label>${mpick("rm",R.m)}`:R.sc==="y"?`<label>Anno</label><select id="ry">${yrs.map(y=>`<option${y===R.y?" selected":""}>${y}</option>`).join("")}</select>`:"";
-  $("#v").innerHTML=`<h1>Report</h1><div class="card two"><div><label>Periodo</label><select id="rs">${[["m","mese"],["y","anno"],["a","tutto"]].map(([k,n])=>`<option value="${k}"${R.sc===k?" selected":""}>${n}</option>`).join("")}</select></div><div>${flt}</div><p class="mut" id="rper" style="grid-column:1/-1;margin:0"></p></div>
+  $("#v").innerHTML=`<h1>Report</h1><div class="card two"><div><label>Periodo</label><select id="rs">${[["m","mese"],["y","anno"],["a","tutto"]].map(([k,n])=>`<option value="${k}"${R.sc===k?" selected":""}>${n}</option>`).join("")}</select></div><div>${flt}</div><p class="mut" id="rper" style="grid-column:1/-1;margin:0"></p>${xoRow(XO.filter(per))}</div>
   <div class="grid c3"><div class="card"><h2>${{m:"Ultimi 12 mesi",y:"Mesi dell’anno",a:"Anni"}[R.sc]}</h2><div class="cv"><canvas id="c1"></canvas></div></div><div class="card"><h2>Spese per categoria</h2><div class="cv"><canvas id="c2"></canvas></div></div></div><div class="grid c3"><div class="card" id="ri"></div><div class="card" id="rcmp"></div></div><div class="card" id="rtop"></div><div class="card" id="rt"></div>`;
   $("#rs").onchange=e=>{R.sc=e.target.value;render()};
   if($("#rm"))$("#rm").onchange=()=>{R.m=mval("rm")||R.m;render()};
@@ -492,7 +498,7 @@ function vRep(){
     T.forEach(t=>{if(t.x<0&&t.d>=wSt&&t.d<wEnd){(Lf[t.c||"-"]=Lf[t.c||"-"]||[]).push(-t.x);(Lt[tk(t)]=Lt[tk(t)]||[]).push(-t.x)}});
     const mk3=L=>{const o={};Object.keys(L).forEach(k=>{if(L[k].length>=5){const a=L[k].slice().sort((p,q)=>p-q);o[k]=Math.max(15000,3*a[a.length>>1])}});return o},tf=mk3(Lf),tt=mk3(Lt),th=t=>tf[t.c||"-"]!=null?tf[t.c||"-"]:tt[tk(t)];
     const hi=D.filter(t=>t.x<0&&th(t)!=null&&-t.x>th(t)&&!fx(t)),sx=hi.reduce((s,t)=>s-t.x,0);
-    return hi.length?ir("Spese straordinarie",hi.length+(hi.length===1?" spesa":" spese")+" molto sopra il solito per la loro categoria (almeno 3 volte la mediana e non meno di 150 €), escluse le spese fisse: "+pc(sx),eur(sx)):ir("Spese straordinarie","Nessuna spesa molto sopra il solito per la propria categoria","–")})();
+    return hi.length?ir("Spese insolite",hi.length+(hi.length===1?" spesa":" spese")+" molto sopra il solito per la loro categoria (almeno 3 volte la mediana e non meno di 150 €), escluse le spese fisse: "+pc(sx)+". Puoi segnarle come straordinarie in Altro",eur(sx)):ir("Spese insolite","Nessuna spesa molto sopra il solito per la propria categoria","–")})();
   const gs=R.sc==="a"?"":(()=>{const ds=new Set(D.filter(t=>t.x<0).map(t=>loc(t.d).slice(0,10)));return ir("Giorni senza spese","Giorni del periodo in cui non hai registrato nessuna spesa",Math.max(0,nd-ds.size)+" su "+nd)})();
   const mp=(()=>{const nt={};T.forEach(t=>{const k=ym(t);nt[k]=(nt[k]||0)+t.x});const ms=(R.sc==="a"?Object.keys(nt):sel).filter(k=>k<cur&&k in nt);
     return ms.length?ir("Mesi chiusi in positivo","Mesi in cui le entrate hanno superato le spese, "+(R.sc==="m"?"tra i 12 del grafico (senza il mese in corso)":R.sc==="y"?"tra i mesi chiusi dell’anno":"tra tutti i mesi chiusi"),ms.filter(k=>nt[k]>0).length+" su "+ms.length):""})();
@@ -520,7 +526,7 @@ function vRep(){
   $("#rtop").innerHTML=`<h2>Spese più alte del periodo</h2>`+(rows(D.filter(t=>t.x<0).sort((p,q)=>p.x-q.x).slice(0,5),1)||'<p class="mut">Nessuna spesa nel periodo.</p>')}
   $("#rt").innerHTML=`<div class="sum"><span>Entrate</span><b class="pos">${eur(ti)}</b></div><div class="sum"><span>Spese</span><b class="neg">${eur(-te)}</b></div><div class="sum"><span>Saldo del periodo</span><b>${eur(ti-te)}</b></div>
   <h2 style="margin-top:18px">Per categoria</h2><table><tr><th></th><th>Spese</th><th>Entrate</th><th class="dcol">Differenza</th><th class="rbtn"></th></tr>${G.map(x=>{const s=Object.values(x.s).sort((a,b)=>b.e-a.e),gi=RG.push({c:gids(x.k),l:x.n})-1;return `<tbody><tr><td colspan="5" style="padding:0;border:0"><details><summary><table style="margin:0"><tr><td><b>${esc(x.n)}</b><small class="dsub ${x.i<x.e?"neg":"pos"}">Differenza ${eur(x.i-x.e)}</small></td><td>${x.e?eur(x.e):"–"}</td><td>${x.i?eur(x.i):"–"}</td><td class="dcol ${x.i<x.e?"neg":"pos"}">${eur(x.i-x.e)}</td><td class="rbtn">${rb(gi)}</td></tr></table></summary><table>${s.map(y=>`<tr class="sub"><td>${esc(y.n)}<small class="dsub ${y.i<y.e?"neg":"pos"}">Differenza ${eur(y.i-y.e)}</small></td><td>${y.e?eur(y.e):"–"}</td><td>${y.i?eur(y.i):"–"}</td><td class="dcol ${y.i<y.e?"neg":"pos"}">${eur(y.i-y.e)}</td><td class="rbtn">${rb(RG.push({c:[y.k],l:y.n})-1)}</td></tr>`).join("")}</table></details></td></tr></tbody>`}).join("")}</table>${G.length?"":'<p class="mut">Nessun movimento nel periodo.</p>'}
-  <p class="mut">I report escludono i trasferimenti e i conti fuori dai totali.</p>`;
+  <p class="mut">I report escludono i trasferimenti, i conti fuori dai totali e, con l’interruttore attivo, le spese straordinarie.</p>`;
 }
 
 /* ---------- Conti ---------- */
@@ -548,11 +554,28 @@ function vMore(){
   const arcSec=()=>{const A=S.C.filter(c=>c.ar),q=aqv(),sub=(p,d)=>S.C.filter(c=>c.p===p&&c.ar).sort((x,y)=>x.n.localeCompare(y.n,"it")).map(c=>`<div class="row" style="cursor:default;padding-left:${4+d*20}px;opacity:.7"><span style="flex:1">${esc(c.n)}</span></div>`+sub(c.i,d+1)).join(""),hit=c=>!q||c.n.toLowerCase().includes(q)||path(c.i).toLowerCase().includes(q)||S.C.some(y=>y.p===c.i&&y.ar&&hit(y)),l=A.filter(c=>!(c.p&&cm[c.p]&&cm[c.p].ar)&&hit(c)).sort((x,y)=>path(x.i).localeCompare(path(y.i),"it"));
     return `<h2 style="margin:18px 0 8px;font-size:15px">Archiviate (${A.length})</h2>`+(l.length?`<div class="scr">${l.map(c=>`<div class="row" style="cursor:default"><span style="flex:1">${esc(path(c.i))}</span>${ib("rest","arcC('"+c.i+"',0)","Ripristina categoria")}</div>`+sub(c.i,1)).join("")}</div>`:`<p class="mut">${A.length?"Nessuna archiviata trovata.":"Nessuna categoria archiviata."}</p>`)};
   acT=()=>'<div class="scr">'+(tree(null,0)||'<p class="mut">'+(aqv()?"Nessuna categoria trovata: premi + per crearla.":"Nessuna categoria.")+'</p>')+'</div>'+arcSec();
-  $("#v").innerHTML=`<h1>Altro</h1>${dupCard}${rcCard()}${lnCard()}${tpCard()}<div class="grid c3"><div>${syncCard()}${datiCard()}
-  <div class="card"><h2>Tema</h2><select id="th" onchange="th(this.value)"><option value="">automatico</option><option value="light">chiaro</option><option value="dark">scuro</option></select></div></div>
+  $("#v").innerHTML=`<h1>Altro</h1>${dupCard}${xoCard()}${rcCard()}${lnCard()}${tpCard()}<div class="grid c3"><div>${syncCard()}${datiCard()}
+  <div class="card"><h2>Tema</h2><select id="th" onchange="th(this.value)"><option value="">automatico</option><option value="light">chiaro</option><option value="dark">scuro</option></select></div>
+  <div class="card"><h2>Informazioni</h2><p class="mut" style="margin:0">${appInfo()}</p></div></div>
   <div class="card"><h2>Categorie</h2><div class="cr" style="margin:4px 0 8px"><input id="ac-q" placeholder="Filtra o aggiungi categoria" oninput="acRun()" value="${esc(aqr)}" autocomplete="off" style="flex:1;min-width:0"><button class="b g cx" title="Aggiungi categoria" aria-label="Aggiungi categoria" onclick="acAdd()">${ic("plus",18)}</button></div>${addP===""?addCRow(0):""}<div id="ac-tree">${acT()}</div></div></div>`;
   $("#fi").onchange=e=>{const f=e.target.files[0];e.target.value="";imp(f)};if($("#fj"))$("#fj").onchange=e=>{const f=e.target.files[0];e.target.value="";imp(f,"json")};if(addP!==null&&$("#nc")){$("#nc").focus();$("#nc").select()}else if(tcv&&$("#tc-n")){$("#tc-n").focus();$("#tc-n").select()}
 }
+/* Spese straordinarie: restano nei saldi, escono dai report (R.xo). Suggerite: almeno 3 volte la mediana della categoria (o della principale) e non meno di 150 €; senza statistiche, da 1.000 € */
+let xoN=20;
+function xoSug(){const inc=new Set(S.A.filter(a=>a.tot).map(a=>a.i)),L=S.T.filter(t=>!t.b&&t.x<0&&inc.has(t.a));
+  const tk=t=>{const c=t.c&&topc(t.c);return c?c.i:"-"},Lf={},Lt={};
+  L.forEach(t=>{if(t.xo)return;(Lf[t.c||"-"]=Lf[t.c||"-"]||[]).push(-t.x);(Lt[tk(t)]=Lt[tk(t)]||[]).push(-t.x)});
+  const mth=M=>{const o={};for(const k in M)if(M[k].length>=5){const a=M[k].sort((p,q)=>p-q);o[k]=Math.max(15000,3*a[a.length>>1])}return o},tf=mth(Lf),tt=mth(Lt);
+  const th=t=>tf[t.c||"-"]!=null?tf[t.c||"-"]:tt[tk(t)]!=null?tt[tk(t)]:100000;
+  return L.filter(t=>t.xo==null&&-t.x>th(t)).sort((p,q)=>p.x-q.x)}
+function xoCard(){const sg=xoSug(),mk=S.T.filter(t=>t.xo).sort((p,q)=>Math.abs(q.x)-Math.abs(p.x)),sm=l=>l.reduce((s,t)=>s+Math.abs(t.x),0);
+  if(!sg.length&&!mk.length)return"";
+  const it=(t,b)=>rows([t],1)+`<p style="display:flex;gap:10px;margin:2px 0 10px">${b}</p>`;
+  return `<div class="card"><h2>Spese straordinarie</h2><p class="mut">Le spese straordinarie restano nei saldi, ma escono dai report finché in Report è attivo il pulsante con il fulmine. Da valutare: spese molto sopra il solito per la loro categoria (almeno 3 volte la mediana e non meno di 150 €).</p>
+  ${sg.length?`<h2 style="font-size:15px;margin-top:14px">Da valutare (${sg.length} · ${eur(sm(sg))})</h2>`+sg.slice(0,xoN).map(t=>it(t,ib("xo","xoSet('"+t.i+"',1)","Segna come straordinaria","p")+ib("x","xoSet('"+t.i+"',0)","Non è straordinaria: togli dai suggerimenti"))).join("")+(sg.length>xoN?`<p>${ib("chd","xoN+=20;render()","Mostra altre")}</p>`:""):""}
+  ${mk.length?`<details style="margin-top:14px"><summary><b>Segnate (${mk.length} · ${eur(sm(mk))})</b></summary>${mk.map(t=>it(t,ib("x","xoSet('"+t.i+"')","Togli il segno di straordinaria"))).join("")}</details>`:""}</div>`}
+function xoSet(i,v){const t=S.T.find(x=>x.i===i);if(!t)return;if(v==null)delete t.xo;else t.xo=v;save();toast(v?"Segnata come straordinaria":v===0?"Tolta dai suggerimenti":"Segno tolto");render()}
+const appInfo=()=>cfg(APPV)?"Versione "+esc(APPV)+(cfg(BUILD)?" · build "+esc(BUILD):""):"Versione locale, non pubblicata";
 function th(v){if(v)document.documentElement.dataset.theme=v;else delete document.documentElement.dataset.theme;render()}
 function addC(){const n=$("#nc").value.trim();if(!n||addP===null)return;if(S.C.some(x=>(x.p||null)===(addP||null)&&x.n.toLowerCase()===n.toLowerCase())){toast("Esiste già");return}S.C.push({i:uid(),n,p:addP||null});if(!addP)aqr="";addP=null;save();render()}
 function delC(i){const used=S.T.some(t=>t.c===i),kid=S.C.some(c=>c.p===i);if(used||kid){toast("Impossibile: categoria in uso o con sottocategorie");return}S.C=S.C.filter(c=>c.i!==i);save();render()}
@@ -605,9 +628,9 @@ async function imp(f,only){
     (E.account||[]).forEach(a=>{const o={i:"f"+a._id,n:a.title,t:a.type,on:a.is_active==="1",tot:a.is_include_into_totals==="1",so:parseInt(a.sort_order)||0},k=S.A.findIndex(x=>x.i===o.i);
     if(k<0)S.A.push(o);else{const x=S.A[k];if(x.lk){if(!x.sl)x.so=o.so}else S.A[k]={...o,so:x.sl?x.so:o.so,sl:x.sl}}});
     const st=[];(E.category||[]).sort((a,b)=>a.left-b.left).forEach(c=>{while(st.length&&+st[st.length-1].right<+c.right)st.pop();const o={i:"f"+c._id,n:c.title,p:st.length?mapc("f"+st[st.length-1]._id):null},k=S.C.findIndex(x=>x.i===o.i);if(!(S.M&&S.M[o.i]))k<0?S.C.push(o):S.C[k]={...o,ar:S.C[k].ar};st.push(c)});
-    const keep=S.T.filter(t=>t.s==="a"),have=new Set(keep.map(t=>t.i).concat(S.D));
+    const keep=S.T.filter(t=>t.s==="a"),have=new Set(keep.map(t=>t.i).concat(S.D)),xoK={};S.T.forEach(t=>{if(t.s==="f"&&t.xo!=null)xoK[t.i]=t.xo});
     const nw=E.transactions.filter(t=>t.is_template==="0"&&t.parent_id==="0").map(t=>({i:"f"+t._id,d:+t.datetime,a:"f"+t.from_account_id,b:t.to_account_id!=="0"?"f"+t.to_account_id:null,c:t.category_id>0?mapc("f"+t.category_id):null,x:+t.from_amount,y:+t.to_amount,n:t.note||"",s:"f"})).filter(t=>!have.has(t.i));
-    S.T=keep.concat(nw);save();toast("Importati "+nw.length+" movimenti");render();
+    nw.forEach(t=>{if(t.i in xoK)t.xo=xoK[t.i]});S.T=keep.concat(nw);save();toast("Importati "+nw.length+" movimenti");render();
   }catch(e){m.textContent="Importazione non riuscita: "+e.message}
 }
 render();
