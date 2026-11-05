@@ -539,7 +539,10 @@ function vRep(){
   else{if(R.sc==="y"){for(let k=1;k<=12;k++)sel.push(R.y+"-"+String(k).padStart(2,"0"))}else{let [y,m]=R.m.split("-").map(Number);for(let k=0;k<12;k++){sel.unshift(y+"-"+String(m).padStart(2,"0"));if(--m===0){m=12;y--}}}lab=sel.map(k=>k.slice(5)+"/"+k.slice(2,4))}
   const sum=f=>sel.map(k=>T.filter(t=>key(t)===k&&f(t)&&(R.sc!=="r"||per(t))).reduce((s,t)=>s+Math.abs(t.x),0)/100);
   const cs=getComputedStyle(document.documentElement),col=n=>cs.getPropertyValue(n).trim()||"#888";
-  if(window.Chart)ch.push(new Chart($("#c1"),{type:"bar",data:{labels:lab,datasets:[{label:"Entrate",data:sum(t=>t.x>0),backgroundColor:col("--in")},{label:"Spese",data:sum(t=>t.x<0),backgroundColor:col("--out")}]},options:{maintainAspectRatio:false,color:col("--ink"),scales:{x:{ticks:{color:col("--mut")}},y:{ticks:{color:col("--mut")},grid:{color:col("--line")}}}}}));
+  if(window.Chart)ch.push(new Chart($("#c1"),{type:"bar",data:{labels:lab,datasets:[{label:"Entrate",data:sum(t=>t.x>0),backgroundColor:col("--in")},{label:"Spese",data:sum(t=>t.x<0),backgroundColor:col("--out")}]},options:{maintainAspectRatio:false,color:col("--ink"),scales:{x:{ticks:{color:col("--mut")}},y:{ticks:{color:col("--mut")},grid:{color:col("--line")}}},
+    // tocco su una colonna: il report passa a quel mese (o a quell'anno, se le colonne sono anni)
+    onHover:(e,el)=>{e.native.target.style.cursor=el.length?"pointer":"default"},
+    onClick:(e,el)=>{if(!el.length)return;const k=sel[el[0].index];if(k.length===4){R.sc="y";R.y=k}else{R.sc="m";R.m=k}render();toast("Report di "+(k.length===4?k:k.slice(5)+"/"+k.slice(0,4)))}}}));
   const g={};D.forEach(t=>{const c=t.c&&topc(t.c),k=c?c.i:"-",o=g[k]||(g[k]={k,n:c?c.n:"no categoria",e:0,i:0,s:{}});
     const f=t.x<0?"e":"i";o[f]+=Math.abs(t.x);const sk=t.c||"-",so=o.s[sk]||(o.s[sk]={k:sk,n:t.c?path(t.c):"no categoria",e:0,i:0});so[f]+=Math.abs(t.x)});
   const G=Object.values(g).sort((a,b)=>b.e-a.e),E=G.filter(x=>x.e>0),pal=["#2347c5","#0e7a5f","#c77d0a","#b5392b","#7a3fb5","#0b8aa8","#8a8f98","#d1498a","#5c7a1f","#a65b2a"];
