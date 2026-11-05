@@ -379,13 +379,16 @@ function arcC(i,v){const br=x=>[x].concat(...S.C.filter(c=>c.p===x).map(c=>br(c.
   S.C.forEach(c=>{if(ids.includes(c.i)){if(v)c.ar=true;else delete c.ar}});save();
   toast(v?(ids.length>1?"Archiviate "+ids.length+" categorie":"Categoria archiviata"):(ids.length>1?"Ripristinate "+ids.length+" categorie":"Categoria ripristinata"));render()}
 let lt=null;
-function render(){const y0=window.scrollY;pvApply();
+// Sulla stessa scheda e sezione si conservano lo scorrimento della pagina e quello dei riquadri interni (.scr, in ordine di pagina)
+let lsc="";
+function render(){const y0=window.scrollY,sk=tab+"|"+(tab==="more"?mSec:""),s0=[...document.querySelectorAll(".scr")].map(e=>e.scrollTop);pvApply();
   cm={};S.C.forEach(c=>cm[c.i]=c);
   $("#nav").innerHTML=tabs.map(([k,n,i])=>`<button class="${k===tab?"on":""}" title="${n}" aria-label="${n}" onclick="go('${k}')">${ic(i,24)}</button>`).join("")+`<button title="${PV?"Mostra i valori":"Nascondi i valori"}" aria-label="${PV?"Mostra i valori":"Nascondi i valori"}"${PV?` style="color:var(--acc)"`:""} onclick="pvTog()">${ic(PV?"eyeoff":"eye",24)}</button>`;
   ch.forEach(c=>c.destroy());ch=[];
   ({home:vHome,add:vAdd,list:vList,rep:vRep,acc:vAcc,more:vMore})[tab]();
   if(tab==="acc")ptDraw();
   window.scrollTo(0,lt===tab?y0:0);lt=tab;
+  if(lsc===sk)document.querySelectorAll(".scr").forEach((e,k)=>{if(s0[k])e.scrollTop=s0[k]});lsc=sk;
 }
 
 /* ---------- Home: elenco conti come in Financisto ---------- */
@@ -579,9 +582,9 @@ function vRep(){
   const tp=E.length>3&&te>0?ir("Peso delle prime 3 categorie","Quota delle spese in: "+esc(E.slice(0,3).map(x=>x.n).join(", ")),Math.round(E.slice(0,3).reduce((s,x)=>s+x.e,0)/te*100)+"%"):"";
   const xs=R.sc==="a"?"":(()=>{const tk=t=>{const c=t.c&&topc(t.c);return c?c.i:"-"},Lf={},Lt={};
     T.forEach(t=>{if(t.x<0&&t.d>=wSt&&t.d<wEnd){(Lf[t.c||"-"]=Lf[t.c||"-"]||[]).push(-t.x);(Lt[tk(t)]=Lt[tk(t)]||[]).push(-t.x)}});
-    const mk3=L=>{const o={};Object.keys(L).forEach(k=>{if(L[k].length>=5){const a=L[k].slice().sort((p,q)=>p-q);o[k]=Math.max(15000,3*a[a.length>>1])}});return o},tf=mk3(Lf),tt=mk3(Lt),th=t=>tf[t.c||"-"]!=null?tf[t.c||"-"]:tt[tk(t)];
+    const mk3=L=>{const o={};Object.keys(L).forEach(k=>{if(L[k].length>=5){const a=L[k].slice().sort((p,q)=>p-q);o[k]=Math.max(30000,3*a[a.length>>1])}});return o},tf=mk3(Lf),tt=mk3(Lt),th=t=>tf[t.c||"-"]!=null?tf[t.c||"-"]:tt[tk(t)];
     const hi=D.filter(t=>t.x<0&&th(t)!=null&&-t.x>th(t)&&!fx(t)),sx=hi.reduce((s,t)=>s-t.x,0);
-    return hi.length?ir("Spese insolite",hi.length+(hi.length===1?" spesa":" spese")+" molto sopra il solito per la loro categoria (almeno 3 volte la mediana e non meno di 150 €), escluse le spese fisse: "+pc(sx)+". Puoi segnarle come straordinarie in Altro → Straordinari",eur(sx)):ir("Spese insolite","Nessuna spesa molto sopra il solito per la propria categoria","–")})();
+    return hi.length?ir("Spese insolite",hi.length+(hi.length===1?" spesa":" spese")+" molto sopra il solito per la loro categoria (almeno 3 volte la mediana e non meno di 300 €), escluse le spese fisse: "+pc(sx)+". Puoi segnarle come straordinarie in Altro → Straordinari",eur(sx)):ir("Spese insolite","Nessuna spesa molto sopra il solito per la propria categoria","–")})();
   const gs=R.sc==="a"?"":(()=>{const ds=new Set(D.filter(t=>t.x<0).map(t=>loc(t.d).slice(0,10)));return ir("Giorni senza spese","Giorni del periodo in cui non hai registrato nessuna spesa",Math.max(0,nd-ds.size)+" su "+nd)})();
   const mp=(()=>{const nt={};T.forEach(t=>{const k=ym(t);nt[k]=(nt[k]||0)+t.x});const ms=(R.sc==="a"?Object.keys(nt):R.sc==="r"?rgM:sel).filter(k=>k<cur&&k in nt);
     return ms.length?ir("Mesi chiusi in positivo","Mesi in cui le entrate hanno superato le spese, "+(R.sc==="m"?"tra i 12 del grafico (senza il mese in corso)":R.sc==="y"?"tra i mesi chiusi dell’anno":R.sc==="r"?"tra i mesi chiusi del periodo (anche se toccati solo in parte)":"tra tutti i mesi chiusi"),ms.filter(k=>nt[k]>0).length+" su "+ms.length):""})();
@@ -660,14 +663,25 @@ function vMore(){
 }
 /* Da sistemare: spese ed entrate senza categoria (i trasferimenti possono restarne senza) */
 let fixN=30;
-const noCat=()=>S.T.filter(t=>!t.b&&!t.c).sort((p,q)=>q.d-p.d);
-function fixCard(){const l=noCat();if(!l.length)return"";const ix=noteIdx(),pr=l.map(t=>noteCat(ix,t.n,kind(t))),np=pr.filter(Boolean).length;
+// a.nf: conto escluso da Da sistemare (es. conti di appoggio dove la categoria non serve)
+const noCatAll=()=>S.T.filter(t=>!t.b&&!t.c).sort((p,q)=>q.d-p.d),noCat=()=>{const nf=new Set(S.A.filter(a=>a.nf).map(a=>a.i));return noCatAll().filter(t=>!nf.has(t.a))};
+function fixAcc(){const n={};noCatAll().forEach(t=>n[t.a]=(n[t.a]||0)+1);const l=S.A.filter(a=>n[a.i]).sort((a,b)=>n[b.i]-n[a.i]);
+  return `<div class="chips" style="flex-wrap:wrap;margin-bottom:12px">${l.map(a=>`<button class="b ${a.nf?"g":"p"} chip" aria-pressed="${!a.nf}" title="${a.nf?"Escluso da Da sistemare: tocca per includerlo":"Incluso: tocca per escluderlo da Da sistemare"}" onclick="fixTog('${a.i}')"${a.nf?' style="opacity:.55;text-decoration:line-through"':""}>${esc(a.n)} (${n[a.i]})</button>`).join("")}</div>`}
+function fixTog(i){const a=acc(i);a.nf=a.nf?undefined:1;if(!a.nf)delete a.nf;a.lk=1;save();toast(a.nf?a.n+" escluso da Da sistemare":a.n+" incluso in Da sistemare");render()}
+function fixCard(){if(!noCatAll().length)return"";const l=noCat();const ix=noteIdx(),pr=l.map(t=>noteCat(ix,t.n,kind(t))),np=pr.filter(Boolean).length;
   const opts=S.C.filter(c=>!c.ar).map(c=>[c.i,path(c.i)]).sort((a,b)=>a[1].localeCompare(b[1],"it")).map(([i,n])=>`<option value="${i}">${esc(n)}</option>`).join("");
-  return `<div class="card"><h2>Da sistemare (${l.length})</h2><p class="mut">Movimenti senza categoria, dal più recente. Quando la nota è già stata usata quasi sempre con la stessa categoria, la trovi proposta: toccala per assegnarla.</p>
+  return `<div class="card"><h2>Da sistemare (${l.length})</h2><p class="mut">Movimenti senza categoria, dal più recente. Quando la nota è già stata usata quasi sempre con la stessa categoria, la trovi proposta: toccala per assegnarla. Tocca un conto per escluderlo o includerlo.</p>${fixAcc()}${l.length?"":'<p class="mut">Nessun movimento da sistemare nei conti inclusi.</p>'}${fixSameBox()}
   ${np?`<p>${ib("check","fixAll()","Assegna tutte le "+np+" categorie proposte","p")} <span class="mut">${np} proposte dalla nota</span></p>`:""}
   ${l.slice(0,fixN).map((t,k)=>rows([t],1)+`<div class="row" style="cursor:default;gap:8px;flex-wrap:wrap">${pr[k]?`<button class="b g chip" title="Assegna la categoria proposta" onclick="fixSet('${t.i}','${pr[k]}')">${ic("tag",16)} ${esc(path(pr[k]))}</button>`:""}<select aria-label="Scegli la categoria" style="flex:1;min-width:0" onchange="fixSet('${t.i}',this.value)"><option value="">scegli la categoria…</option>${opts}</select></div>`).join("")}
   ${l.length>fixN?`<p>${ib("chd","fixN+=30;render()","Mostra altri")}</p>`:""}</div>`}
-function fixSet(i,c){const t=S.T.find(x=>x.i===i);if(!t||!c||!cm[c])return;t.c=c;if(t.s==="f")t.s="a";save();toast("Categoria assegnata: "+path(c));render()}
+// fxSame: dopo un'assegnazione, proposta di dare la stessa categoria agli altri movimenti da sistemare con la stessa nota e lo stesso tipo
+let fxSame=null;
+const fixPeers=o=>o?noCat().filter(t=>kind(t)===o.k&&nNorm(t.n)===o.n):[];
+function fixSet(i,c){const t=S.T.find(x=>x.i===i);if(!t||!c||!cm[c])return;t.c=c;if(t.s==="f")t.s="a";save();
+  const n=nNorm(t.n);fxSame=n?{c,n,k:kind(t),l:t.n}:null;if(!fixPeers(fxSame).length)fxSame=null;toast("Categoria assegnata: "+path(c));render()}
+function fixSameAll(){const l=fixPeers(fxSame),c=fxSame&&fxSame.c;if(!c||!cm[c]){fxSame=null;render();return}l.forEach(t=>{t.c=c;if(t.s==="f")t.s="a"});fxSame=null;save();toast(l.length+(l.length===1?" movimento sistemato":" movimenti sistemati")+": "+path(c));render()}
+function fixSameBox(){const l=fixPeers(fxSame);if(!l.length||!cm[fxSame.c])return"";
+  return `<div class="sum" style="gap:10px;align-items:center;margin-bottom:12px"><span>Altri ${l.length} con la nota «${esc(fxSame.l)}»<small>Dai anche a loro ${esc(path(fxSame.c))}?</small></span><span style="display:flex;gap:8px">${ib("check","fixSameAll()","Assegna la stessa categoria a tutti","p")}${ib("x","fxSame=null;render()","No, lascia così")}</span></div>`}
 function fixAll(){const ix=noteIdx();let n=0;noCat().forEach(t=>{const c=noteCat(ix,t.n,kind(t));if(c){t.c=c;if(t.s==="f")t.s="a";n++}});save();toast(n+(n===1?" categoria assegnata":" categorie assegnate"));render()}
 /* Costi fissi: negli ultimi 12 mesi, stesso conto, categoria e nota in almeno 6 mesi diversi (al massimo 1,5 volte al mese),
    con l'ultimo pagamento negli ultimi 45 giorni; oppure nati da una ricorrenza. Escluse le spese straordinarie */
@@ -690,14 +704,14 @@ function ntCard(){const G={};S.T.forEach(t=>{if(t.b)return;const n=nNorm(t.n);if
   ${l.slice(0,ntN).map((g,k)=>`<div class="row" onclick="ntGo(${k})"><div class="m"><b>${esc(g.n)}</b><small>${g.c} movimenti · dal ${dt(g.f)} al ${dt(g.l)}</small></div><div class="r">${g.e?`<b class="neg">${eur(-g.e)}</b>`:""}${g.i?`<small style="display:block" class="pos">+${eur(g.i)}</small>`:""}</div></div>`).join("")}
   ${l.length>ntN?`<p>${ib("chd","ntN+=40;render()","Mostra altre")}</p>`:""}</div>`}
 function ntGo(k){const g=ntL[k];if(!g)return;F.q=g.n;F.a="";F.m="";F.y="";F.c=null;F.cl="";F.ids=null;F.rep=false;F.n=100;tab="list";render()}
-/* Spese straordinarie: restano nei saldi, escono dai report (R.xo). Suggerite: almeno 3 volte la mediana della categoria (o della principale) e non meno di 150 €; senza statistiche, da 1.000 € */
+/* Spese straordinarie: restano nei saldi, escono dai report (R.xo). Suggerite: almeno 3 volte la mediana della categoria (o della principale) e non meno di 300 €; senza statistiche, da 1.000 € */
 let xoN=20;
 // Statistiche per spese ed entrate separate (chiave: segno + categoria). th: soglia "molto sopra il solito";
 // usual: nei 12 mesi prima ci sono altri 2 movimenti della stessa categoria e segno grandi almeno la metà, cioè un importo abituale (es. bollette, stipendio)
 function xoStats(){const inc=new Set(S.A.filter(a=>a.tot).map(a=>a.i)),L=S.T.filter(t=>!t.b&&t.x&&inc.has(t.a));
   const sg=t=>t.x<0?"e":"i",tk=t=>{const c=t.c&&topc(t.c);return sg(t)+(c?c.i:"-")},fk=t=>sg(t)+(t.c||"-"),Lf={},Lt={},B={};
   L.forEach(t=>{(B[fk(t)]=B[fk(t)]||[]).push(t);if(t.xo)return;(Lf[fk(t)]=Lf[fk(t)]||[]).push(Math.abs(t.x));(Lt[tk(t)]=Lt[tk(t)]||[]).push(Math.abs(t.x))});
-  const mth=M=>{const o={};for(const k in M)if(M[k].length>=5){const a=M[k].sort((p,q)=>p-q);o[k]=Math.max(15000,3*a[a.length>>1])}return o},tf=mth(Lf),tt=mth(Lt);
+  const mth=M=>{const o={};for(const k in M)if(M[k].length>=5){const a=M[k].sort((p,q)=>p-q);o[k]=Math.max(30000,3*a[a.length>>1])}return o},tf=mth(Lf),tt=mth(Lt);
   const th=t=>tf[fk(t)]!=null?tf[fk(t)]:tt[tk(t)]!=null?tt[tk(t)]:100000;
   const usual=t=>(B[fk(t)]||[]).filter(x=>x!==t&&x.d<t.d&&x.d>=t.d-365*864e5&&Math.abs(x.x)>=Math.abs(t.x)/2).length>=2;
   return{L,th,usual}}
@@ -706,7 +720,7 @@ function xoCard(){const sg=xoSug(),mk=S.T.filter(t=>t.xo).sort((p,q)=>Math.abs(q
   const ui=t=>usual(t)?`<button class="b g ic" title="Importo abituale: nei 12 mesi prima ci sono almeno altri 2 movimenti della stessa categoria grandi almeno la metà. Forse non è straordinario" aria-label="Perché forse non è straordinario" onclick="toast(this.title)" style="color:var(--acc)">${ic("info")}</button>`:"";
   if(!sg.length&&!mk.length)return"";
   const it=(t,b)=>rows([t],1)+`<p style="display:flex;gap:10px;margin:2px 0 10px">${b}</p>`;
-  return `<div class="card"><h2>Movimenti straordinari</h2><p class="mut">Spese ed entrate straordinarie restano nei saldi, ma escono dai report finché in Report è attivo il pulsante con il fulmine. Da valutare: movimenti molto sopra il solito per la loro categoria (almeno 3 volte la mediana e non meno di 150 €, spese ed entrate separate), esclusi gli importi che nei 12 mesi prima si erano già visti almeno 2 volte. Tra le segnate, la i indica quelle che questa regola considera abituali.</p>
+  return `<div class="card"><h2>Movimenti straordinari</h2><p class="mut">Spese ed entrate straordinarie restano nei saldi, ma escono dai report finché in Report è attivo il pulsante con il fulmine. Da valutare: movimenti molto sopra il solito per la loro categoria (almeno 3 volte la mediana e non meno di 300 €, spese ed entrate separate), esclusi gli importi che nei 12 mesi prima si erano già visti almeno 2 volte. Tra le segnate, la i indica quelle che questa regola considera abituali.</p>
   ${sg.length?`<h2 style="font-size:15px;margin-top:14px">Da valutare (${sg.length} · ${sm(sg)})</h2>`+sg.slice(0,xoN).map(t=>it(t,ib("xo","xoSet('"+t.i+"',1)","Segna come straordinario","p")+ib("x","xoSet('"+t.i+"',0)","Non è straordinario: togli dai suggerimenti"))).join("")+(sg.length>xoN?`<p>${ib("chd","xoN+=20;render()","Mostra altri")}</p>`:""):""}
   ${mk.length?`<details style="margin-top:14px"><summary><b>Segnati (${mk.length} · ${sm(mk)})${mk.some(usual)?" · "+mk.filter(usual).length+" con la i":""}</b></summary>${mk.filter(usual).concat(mk.filter(t=>!usual(t))).map(t=>it(t,ib("x","xoSet('"+t.i+"')","Togli il segno di straordinario")+ui(t))).join("")}</details>`:""}</div>`}
 function xoSet(i,v){const t=S.T.find(x=>x.i===i);if(!t)return;if(v==null)delete t.xo;else t.xo=v;save();toast(v?"Segnato come straordinario":v===0?"Tolto dai suggerimenti":"Segno tolto");render()}
