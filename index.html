@@ -67,7 +67,7 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventLi
 const K="cassetto1";
 let S=null;
 try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
-S=S||{A:[],C:[],T:[],D:[],L:{}};S.RC=S.RC||[];S.LN=S.LN||[];
+S=S||{A:[],C:[],T:[],D:[],L:{}};S.RC=S.RC||[];S.LN=S.LN||[];S.V=S.V||[];
 const $=s=>document.querySelector(s);
 const P={tag:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><path d="M7 7h.01"/>',plus:'<path d="M12 5v14M5 12h14"/>',plusc:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',chart:'<path d="M5 20V11M12 20V4M19 20v-6"/>',card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',dots:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',adown:'<path d="M5 12h14"/>',aup:'<path d="M12 5v14M5 12h14"/>',swap:'<path d="M4 8h16M16 4l4 4-4 4M20 16H4M8 12l-4 4 4 4"/>',check:'<path d="M5 12l5 5 9-10"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',copy:'<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/>',chd:'<path d="M6 9l6 6 6-6"/>',chu:'<path d="M18 15l-6-6-6 6"/>',arch:'<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8M10 12h4"/>',rest:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>',dl:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',up:'<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>',merge:'<path d="M6 3v6c0 3 3 5 6 5s6-2 6-5V3M12 14v7"/>',sum:'<path d="M18 5H6l7 7-7 7h12"/>',sumoff:'<path d="M18 5H6l7 7-7 7h12"/><path d="M3 3l18 18"/>',repeat:'<path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/>',checkplus:'<path d="M3 13l4 4 8-9"/><path d="M19 4v6M16 7h6"/>'};
 P.eye='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>';P.eyeoff='<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/>';
@@ -83,7 +83,7 @@ let toastT;function toast(m){const t=$("#toast");t.textContent=m;t.style.display
 // ---- Sincronizzazione Google Drive (cartella nascosta dell'app) ----
 const APPV="__APPV__",BUILD="__BUILD__"; // versione (VERSIONE di sw.js) e build: inseriti alla pubblicazione
 const GID="__G_CLIENT__",GSC="https://www.googleapis.com/auth/drive.appdata",GF="cassetto-dati.json",GK="cassetto_gsync";
-const COLS=["A","C","T","RC","LN"];let sig={},um={};
+const COLS=["A","C","T","RC","LN","V"];let sig={},um={};
 function snap(){sig={};um={};for(const c of COLS)for(const x of (S[c]||[])){const{u,...r}=x;sig[c+x.i]=JSON.stringify(r);um[c+x.i]=u||0}}
 function stamp(){const now=Date.now(),seen=new Set();S.G=S.G||{};
   for(const c of COLS)for(const x of (S[c]=S[c]||[])){const k=c+x.i,{u,...r}=x,s=JSON.stringify(r);seen.add(k);
@@ -322,10 +322,24 @@ function patr(sel){const set=new Set(sel?[sel]:S.A.filter(a=>a.tot&&a.on).map(a=
   if(!first)return{lab:[],val:[]};const lab=[],val=[],now=mk(Date.now());let [y,mo]=first.split("-").map(Number),run=0;
   for(;;){const k=y+"-"+String(mo).padStart(2,"0");run+=m[k]||0;lab.push(k);val.push(run/100);if(k>=now)break;if(++mo>12){mo=1;y++}}
   return{lab,val}}
-function ptCard(){return `<div class="card"><h2>Andamento del patrimonio</h2><div class="two"><select id="pa"><option value="">totale dei conti inclusi</option>${S.A.map(a=>`<option value="${a.i}"${PT.a===a.i?" selected":""}>${esc(a.n)}</option>`).join("")}</select><select id="pr"><option value="12"${PT.r==="12"?" selected":""}>ultimi 12 mesi</option><option value="a"${PT.r==="a"?" selected":""}>tutto lo storico</option></select></div><div class="cv" style="margin-top:10px"><canvas id="c3"></canvas></div></div>`}
+// Patrimonio netto: conti inclusi nei totali meno il debito residuo stimato di mutui e prestiti
+const debt=()=>S.LN.reduce((s,L)=>s+lnCalc(L).D,0);
+function netRows(tot){const D=debt();return D>0?`<div class="sum"><span>Debiti residui<small>Mutui e prestiti, stima</small></span><b class="neg">${eur(-D)}</b></div><div class="sum"><span>Patrimonio netto<small>Totale meno debiti</small></span><b class="${tot-D<0?"neg":"pos"}">${eur(tot-D)}</b></div>`:""}
+// Proiezione a 12 mesi del totale: media mensile (entrate meno spese, trasferimenti verso conti fuori dai totali compresi) dei 12 mesi chiusi,
+// straordinari esclusi; dalla fine prevista di un mutuo la sua rata torna disponibile
+function proj(){const set=new Set(S.A.filter(a=>a.tot&&a.on).map(a=>a.i)),now=mk(Date.now()),m={};
+  S.T.forEach(t=>{if(t.xo)return;let v=0;if(set.has(t.a))v+=t.x;if(t.b&&set.has(t.b))v+=t.y;if(!v)return;const k=mk(t.d);if(k<now)m[k]=(m[k]||0)+v});
+  let net=0;for(let k=1;k<=12;k++)net+=m[mk(addM(Date.now(),-k,1))]||0;net/=12;
+  const fr=S.LN.map(L=>({L,c:lnCalc(L)})).filter(o=>o.c.end&&o.c.R&&o.c.D>0),lab=[],val=[];let v=S.A.filter(a=>a.tot&&a.on).reduce((s,a)=>s+bal(a.i),0);
+  for(let k=1;k<=12;k++){const t=addM(Date.now(),k,1);v+=net+fr.reduce((s,o)=>s+(o.c.end<t?o.c.R:0),0);lab.push(mk(t));val.push(v/100)}
+  return{net,lab,val,fr}}
+function ptCard(){return `<div class="card"><h2>Andamento del patrimonio</h2><div class="two"><select id="pa"><option value="">totale dei conti inclusi</option>${S.A.map(a=>`<option value="${a.i}"${PT.a===a.i?" selected":""}>${esc(a.n)}</option>`).join("")}</select><select id="pr"><option value="12"${PT.r==="12"?" selected":""}>ultimi 12 mesi</option><option value="a"${PT.r==="a"?" selected":""}>tutto lo storico</option></select></div><div class="cv" style="margin-top:10px"><canvas id="c3"></canvas></div><p class="mut" id="pj" style="margin:8px 0 0"></p></div>`}
 function ptDraw(){const pa=$("#pa");if(!pa)return;pa.onchange=e=>{PT.a=e.target.value;render()};$("#pr").onchange=e=>{PT.r=e.target.value;render()};if(!window.Chart)return;
   const p=patr(PT.a),n=PT.r==="a"?p.lab.length:12,lab=p.lab.slice(-n),val=p.val.slice(-n),cs=getComputedStyle(document.documentElement),col=k=>cs.getPropertyValue(k).trim()||"#888";
-  ch.push(new Chart($("#c3"),{type:"line",data:{labels:lab.map(k=>k.slice(5)+"/"+k.slice(2,4)),datasets:[{label:"Saldo",data:val,borderColor:col("--acc"),backgroundColor:col("--acc")+"22",fill:true,tension:.25,pointRadius:0,borderWidth:2}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:col("--mut"),maxTicksLimit:8}},y:{ticks:{color:col("--mut")},grid:{color:col("--line")}}}}}))}
+  const P=PT.a?null:proj(),L2=P?lab.concat(P.lab):lab,ds=[{label:"Saldo",data:val,borderColor:col("--acc"),backgroundColor:col("--acc")+"22",fill:true,tension:.25,pointRadius:0,borderWidth:2}];
+  if(P){ds.push({label:"Proiezione",data:val.map((x,k)=>k===val.length-1?x:null).concat(P.val),borderColor:col("--mut"),borderDash:[6,4],fill:false,tension:.25,pointRadius:0,borderWidth:2});
+    $("#pj").textContent="Linea tratteggiata: proiezione a 12 mesi con la media degli ultimi 12 mesi chiusi (entrate meno spese, straordinari esclusi): "+(P.net>=0?"+":"")+eur(P.net)+" al mese. Tra 12 mesi circa "+eur(P.val[11]*100)+"."+P.fr.filter(o=>o.c.end<=addM(Date.now(),12,1)).map(o=>" Da "+ml(mk(o.c.end))+" finisce "+o.L.n+": +"+eur(o.c.R)+" al mese.").join("")}
+  ch.push(new Chart($("#c3"),{type:"line",data:{labels:L2.map(k=>k.slice(5)+"/"+k.slice(2,4)),datasets:ds},options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:col("--mut"),maxTicksLimit:8}},y:{ticks:{color:col("--mut")},grid:{color:col("--line")}}}}}))}
 function doRec(){const a=acc(rcSrc),v=pn($("#rc-v").value);if(!a||isNaN(v)){toast("Inserisci il saldo reale");return}
   const diff=Math.round(v*100)-bal(a.i);if(!diff){toast("Il saldo coincide già");rcSrc=null;render();return}
   let c=S.C.find(x=>x.n==="Rettifica saldo");if(!c){c={i:"nrett",n:"Rettifica saldo",p:null};S.C.push(c)}
@@ -392,7 +406,7 @@ function vHome(){
   $("#v").innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between"><h1>Financial</h1>${ib(ordEdit?"check":"edit","ordEdit=!ordEdit;render()",ordEdit?"Fine":"Cambia l’ordine dei conti")}</div>
   ${ordEdit?`<p class="mut" style="margin:0 0 10px">Come in Financisto, il numero più alto va più in alto. Cambia il numero oppure usa le frecce.</p>`:""}
   <div class="card">${l.map(row).join("")||'<p class="mut">Nessun conto. Importa il backup da Altro o crea un conto in Conti.</p>'}</div>
-  <div class="card"><div class="sum" style="border:0;padding:4px 0"><span>Totale<small>Conti inclusi nei totali</small></span><b class="${tot<0?"neg":"pos"}" style="font-size:22px">${eur(tot)}</b></div></div>
+  <div class="card"><div class="sum" style="border:0;padding:4px 0"><span>Totale<small>Conti inclusi nei totali</small></span><b class="${tot<0?"neg":"pos"}" style="font-size:22px">${eur(tot)}</b></div>${netRows(tot)}</div>
   ${gOn()?`<div class="card" style="display:flex;align-items:center;gap:10px"><span class="mut" id="sy2" style="flex:1">${esc(gMsg||gName()+" collegato")}</span>${ib(gIc(),"gSync(false)","Sincronizza ora")}</div>`:""}`;
 }
 function goAcc(i){F.a=i;F.m="";F.y="";F.q="";F.c=null;F.cl="";F.ids=null;F.rep=false;F.n=100;tab="list";render()}
@@ -483,6 +497,16 @@ function lrows(){
 /* ---------- Report ---------- */
 let RG=[];
 let R={sc:"m",m:loc(Date.now()).slice(0,7),y:loc(Date.now()).slice(0,4),xo:true}; // xo: escludi le spese straordinarie
+// Viste salvate del Report: periodo (solo i campi che contano per il tipo scelto) e interruttore dei straordinari, con un nome; sincronizzate (S.V)
+let vwNew=false;
+const vwKeys=["sc","m","y","f","t","xo","cmp"],vwCur=()=>{const o={sc:R.sc,xo:R.xo!==false},k={m:["m","cmp"],y:["y"],r:["f","t"],a:[]}[R.sc]||[];k.forEach(x=>{if(R[x]!=null)o[x]=R[x]});return o},vwSame=v=>JSON.stringify(vwCur())===JSON.stringify(v.r);
+function vwRow(){const on=S.V.find(vwSame);
+  return `<div style="grid-column:1/-1"><div class="chips" style="align-items:center">${S.V.slice().sort((a,b)=>a.n.localeCompare(b.n,"it")).map(v=>`<button class="b ${vwSame(v)?"p":"g"} chip" title="Vista salvata" onclick="vwGo('${v.i}')">${esc(v.n)}</button>`).join("")}
+  ${on?ib("trash","vwDel('"+on.i+"')","Elimina la vista "+esc(on.n),"d"):ib("plus","vwNew=!vwNew;render()","Salva questo periodo come vista")}</div>
+  ${vwNew&&!on?`<div class="row" style="cursor:default;gap:8px"><input id="vw-n" placeholder="Nome della vista, es. Vacanze 2025" autocomplete="off" style="flex:1;min-width:0" onkeydown="if(event.key==='Enter')vwAdd()">${ib("check","vwAdd()","Salva","p")}${ib("x","vwNew=false;render()","Annulla")}</div>`:""}</div>`}
+function vwGo(i){const v=S.V.find(x=>x.i===i);if(!v)return;vwKeys.forEach(k=>{if(k in v.r)R[k]=v.r[k]});R.xo=v.r.xo!==false;render()}
+function vwAdd(){const n=(($("#vw-n")||{}).value||"").trim();if(!n){toast("Scrivi un nome");return}S.V.push({i:uid(),n,r:vwCur()});vwNew=false;save();toast("Vista salvata");render()}
+function vwDel(i){S.V=S.V.filter(x=>x.i!==i);save();toast("Vista eliminata");render()}
 function xoRow(l){const e=l.reduce((s,t)=>s+(t.x<0?-t.x:0),0),i=l.reduce((s,t)=>s+(t.x>0?t.x:0),0),v=[e?"spese "+eur(e):"",i?"entrate "+eur(i):""].filter(Boolean).join(", "),tt=R.xo?"Movimenti straordinari esclusi: tocca per includerli":"Movimenti straordinari inclusi: tocca per escluderli";
   return `<div style="grid-column:1/-1;display:flex;align-items:center;gap:10px"><span class="mut" style="flex:1">${R.xo?(l.length?(l.length===1?"Escluso 1 movimento straordinario":"Esclusi "+l.length+" movimenti straordinari")+" del periodo: "+v:"Movimenti straordinari esclusi (nessuno nel periodo)"):"Movimenti straordinari inclusi"+(l.length?": "+l.length+" nel periodo, "+v:"")}</span><button class="b ${R.xo?"p":"g"} ic sm" title="${tt}" aria-label="${tt}" aria-pressed="${R.xo}" onclick="R.xo=!R.xo;render()">${ic("xo",18)}</button></div>`}
 function vRep(){
@@ -491,18 +515,23 @@ function vRep(){
   const rb=i=>`<button class="b g ic sm" title="Vedi i movimenti" aria-label="Vedi i movimenti" onclick="event.stopPropagation();repGo(${i})">${ic("list",16)}</button>`;
   const inc=new Set(S.A.filter(a=>a.tot).map(a=>a.i)),T=S.T.filter(t=>!t.b&&inc.has(t.a)&&!(R.xo&&t.xo)),XO=S.T.filter(t=>t.xo&&!t.b&&inc.has(t.a));
   const ym=t=>loc(t.d).slice(0,7),yrs=[...new Set(T.map(t=>ym(t).slice(0,4)).concat(R.y))].sort().reverse();
-  const per=t=>R.sc==="a"||(R.sc==="y"?ym(t).slice(0,4)===R.y:ym(t)===R.m);
-  const flt=R.sc==="m"?`<label>Mese</label>${mpick("rm",R.m)}`:R.sc==="y"?`<label>Anno</label><select id="ry">${yrs.map(y=>`<option${y===R.y?" selected":""}>${y}</option>`).join("")}</select>`:"";
-  $("#v").innerHTML=`<h1>Report</h1><div class="card two"><div><label>Periodo</label><select id="rs">${[["m","mese"],["y","anno"],["a","tutto"]].map(([k,n])=>`<option value="${k}"${R.sc===k?" selected":""}>${n}</option>`).join("")}</select></div><div>${flt}</div><p class="mut" id="rper" style="grid-column:1/-1;margin:0"></p>${xoRow(XO.filter(per))}</div>
-  <div class="grid c3"><div class="card"><h2>${{m:"Ultimi 12 mesi",y:"Mesi dell’anno",a:"Anni"}[R.sc]}</h2><div class="cv"><canvas id="c1"></canvas></div></div><div class="card"><h2>Spese per categoria</h2><div class="cv"><canvas id="c2"></canvas></div></div></div><div class="grid c3"><div class="card" id="ri"></div><div class="card" id="rcmp"></div></div>${R.sc==="a"?'<div class="card" id="ryr"></div>':""}<div class="card" id="rtop"></div><div class="card" id="rt"></div>`;
+  if(R.sc==="r"){R.t=R.t||loc(Date.now()).slice(0,10);R.f=R.f||loc(addM(Date.now(),-3)).slice(0,10);if(R.f>R.t){const x=R.f;R.f=R.t;R.t=x}}
+  const per=t=>R.sc==="a"||(R.sc==="r"?(d=>d>=R.f&&d<=R.t)(loc(t.d).slice(0,10)):R.sc==="y"?ym(t).slice(0,4)===R.y:ym(t)===R.m);
+  const flt=R.sc==="m"?`<label>Mese</label>${mpick("rm",R.m)}`:R.sc==="y"?`<label>Anno</label><select id="ry">${yrs.map(y=>`<option${y===R.y?" selected":""}>${y}</option>`).join("")}</select>`
+    :"",rgIn=R.sc==="r"?`<div class="two" style="grid-column:1/-1"><div style="min-width:0"><label>Dal</label><input id="rf" type="date" value="${R.f}" style="min-width:0;width:100%"></div><div style="min-width:0"><label>Al</label><input id="rt2" type="date" value="${R.t}" style="min-width:0;width:100%"></div></div>`:"";
+  const rgM=R.sc==="r"?(()=>{const o=[];let k=R.f.slice(0,7);while(k<=R.t.slice(0,7)&&o.length<600){o.push(k);k=mk(addM(new Date(+k.slice(0,4),+k.slice(5)-1,1).getTime(),1,1))}return o})():[];
+  $("#v").innerHTML=`<h1>Report</h1><div class="card two"><div><label>Periodo</label><select id="rs">${[["m","mese"],["y","anno"],["r","dal… al…"],["a","tutto"]].map(([k,n])=>`<option value="${k}"${R.sc===k?" selected":""}>${n}</option>`).join("")}</select></div><div>${flt}</div>${rgIn}<p class="mut" id="rper" style="grid-column:1/-1;margin:0"></p>${xoRow(XO.filter(per))}${vwRow()}</div>
+  <div class="grid c3"><div class="card"><h2>${{m:"Ultimi 12 mesi",y:"Mesi dell’anno",a:"Anni",r:rgM.length>36?"Anni del periodo":"Mesi del periodo"}[R.sc]}</h2><div class="cv"><canvas id="c1"></canvas></div></div><div class="card"><h2>Spese per categoria</h2><div class="cv"><canvas id="c2"></canvas></div></div></div><div class="grid c3"><div class="card" id="ri"></div><div class="card" id="rcmp"></div></div>${R.sc==="a"?'<div class="card" id="ryr"></div>':""}<div class="card" id="rtop"></div><div class="card" id="rt"></div>`;
   $("#rs").onchange=e=>{R.sc=e.target.value;render()};
   if($("#rm"))$("#rm").onchange=()=>{R.m=mval("rm")||R.m;render()};
   if($("#ry"))$("#ry").onchange=e=>{R.y=e.target.value;render()};
+  if($("#rf"))$("#rf").onchange=e=>{if(e.target.value){R.f=e.target.value;render()}};if($("#rt2"))$("#rt2").onchange=e=>{if(e.target.value){R.t=e.target.value;render()}};
   const D=T.filter(per);
   let sel=[],lab,key=ym;
   if(R.sc==="a"){sel=yrs.slice().reverse();lab=sel;key=t=>ym(t).slice(0,4)}
+  else if(R.sc==="r"){if(rgM.length>36){sel=[...new Set(rgM.map(k=>k.slice(0,4)))];lab=sel;key=t=>ym(t).slice(0,4)}else{sel=rgM;lab=sel.map(k=>k.slice(5)+"/"+k.slice(2,4))}}
   else{if(R.sc==="y"){for(let k=1;k<=12;k++)sel.push(R.y+"-"+String(k).padStart(2,"0"))}else{let [y,m]=R.m.split("-").map(Number);for(let k=0;k<12;k++){sel.unshift(y+"-"+String(m).padStart(2,"0"));if(--m===0){m=12;y--}}}lab=sel.map(k=>k.slice(5)+"/"+k.slice(2,4))}
-  const sum=f=>sel.map(k=>T.filter(t=>key(t)===k&&f(t)).reduce((s,t)=>s+Math.abs(t.x),0)/100);
+  const sum=f=>sel.map(k=>T.filter(t=>key(t)===k&&f(t)&&(R.sc!=="r"||per(t))).reduce((s,t)=>s+Math.abs(t.x),0)/100);
   const cs=getComputedStyle(document.documentElement),col=n=>cs.getPropertyValue(n).trim()||"#888";
   if(window.Chart)ch.push(new Chart($("#c1"),{type:"bar",data:{labels:lab,datasets:[{label:"Entrate",data:sum(t=>t.x>0),backgroundColor:col("--in")},{label:"Spese",data:sum(t=>t.x<0),backgroundColor:col("--out")}]},options:{maintainAspectRatio:false,color:col("--ink"),scales:{x:{ticks:{color:col("--mut")}},y:{ticks:{color:col("--mut")},grid:{color:col("--line")}}}}}));
   const g={};D.forEach(t=>{const c=t.c&&topc(t.c),k=c?c.i:"-",o=g[k]||(g[k]={k,n:c?c.n:"no categoria",e:0,i:0,s:{}});
@@ -511,7 +540,7 @@ function vRep(){
   if(window.Chart)ch.push(new Chart($("#c2"),{type:"doughnut",data:{labels:E.slice(0,9).map(x=>x.n).concat(E.length>9?["Altre"]:[]),datasets:[{data:E.slice(0,9).map(x=>x.e/100).concat(E.length>9?[E.slice(9).reduce((s,x)=>s+x.e,0)/100]:[]),backgroundColor:pal,borderColor:col("--card")}]},options:{maintainAspectRatio:false,plugins:{legend:{position:"right",labels:{color:col("--ink")}}}}}));
   const te=G.reduce((s,x)=>s+x.e,0),ti=G.reduce((s,x)=>s+x.i,0);
   {const cur=mk(Date.now()),ks=D.map(ym).sort();
-  const n=R.sc==="m"?1:R.sc==="y"?(R.y===cur.slice(0,4)?+cur.slice(5):12):Math.max(1,ks.length?(+cur.slice(0,4)-+ks[0].slice(0,4))*12+(+cur.slice(5)-+ks[0].slice(5))+1:1);
+  const n=R.sc==="m"?1:R.sc==="r"?Math.max(1,rgM.length):R.sc==="y"?(R.y===cur.slice(0,4)?+cur.slice(5):12):Math.max(1,ks.length?(+cur.slice(0,4)-+ks[0].slice(0,4))*12+(+cur.slice(5)-+ks[0].slice(5))+1:1);
   let proj=null;
   if(R.sc==="m"&&R.m===cur){const now=new Date(),dd=now.getDate();let rem=0;for(let k=1;k<=3;k++){const key=mk(new Date(now.getFullYear(),now.getMonth()-k,1).getTime());rem+=T.filter(t=>ym(t)===key&&t.x<0&&new Date(t.d).getDate()>dd).reduce((s,t)=>s-t.x,0)}proj=te+rem/3}
   const ir=(l,d,v,c)=>`<div class="sum"><span>${l}<small>${d}</small></span><b${c?` class="${c}"`:""}>${v}</b></div>`;
@@ -520,21 +549,23 @@ function vRep(){
   let nd;
   if(R.sc==="m"){const [y1,m1]=R.m.split("-").map(Number);nd=cutM?tn:new Date(y1,m1,0).getDate()}
   else if(R.sc==="y"){const y1=+R.y;nd=cutY?Math.round((new Date(tdy.getFullYear(),tm-1,tn)-new Date(y1,0,1))/864e5)+1:Math.round((new Date(y1+1,0,1)-new Date(y1,0,1))/864e5)}
+  else if(R.sc==="r"){const td=loc(Date.now()).slice(0,10),e=R.t<td?R.t:td;nd=Math.max(1,Math.round((new Date(e+"T12:00")-new Date(R.f+"T12:00"))/864e5)+1)}
   else nd=D.length?Math.max(1,Math.round((Date.now()-D.reduce((m,t)=>Math.min(m,t.d),Infinity))/864e5)+1):1;
   {const f=d=>new Date(d).toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric"}),td=Date.now();let a0,a1;
     if(R.sc==="m"){const [y1,m1]=R.m.split("-").map(Number);a0=new Date(y1,m1-1,1);a1=cutM?td:new Date(y1,m1,0)}
     else if(R.sc==="y"){a0=new Date(+R.y,0,1);a1=cutY?td:new Date(+R.y,11,31)}
+    else if(R.sc==="r"){a0=new Date(R.f+"T12:00");a1=Math.min(new Date(R.t+"T12:00").getTime(),td)}
     else{a0=D.length?D.reduce((m,t)=>Math.min(m,t.d),Infinity):td;a1=td}
     const e=$("#rper");if(e)e.textContent="Dal "+f(a0)+" al "+f(a1)+" · "+nd+(nd===1?" giorno":" giorni")+(nd>=365?" (circa "+((y)=>y==="1,0"?"1 anno":y+" anni")((nd/365.25).toFixed(1).replace(".",","))+")":"")}
   const dk=t=>{const o=new Date(t.d);return (o.getMonth()+1)*100+o.getDate()};
   // Spese fisse (12 mesi che finiscono col periodo, al massimo 1,5 volte al mese in media): stesso conto, categoria e importo (all’euro) in almeno 6 mesi, oppure stesso conto e categoria in almeno 9 mesi; oppure movimenti nati da una ricorrenza
-  const wEnd=(()=>{let e;if(R.sc==="m"){const [y1,m1]=R.m.split("-").map(Number);e=new Date(y1,m1,1).getTime()}else if(R.sc==="y")e=new Date(+R.y+1,0,1).getTime();else e=Date.now();return Math.min(e,Date.now()+864e5)})(),wSt=wEnd-366*864e5;
+  const wEnd=(()=>{let e;if(R.sc==="m"){const [y1,m1]=R.m.split("-").map(Number);e=new Date(y1,m1,1).getTime()}else if(R.sc==="y")e=new Date(+R.y+1,0,1).getTime();else if(R.sc==="r")e=new Date(R.t+"T00:00").getTime()+864e5;else e=Date.now();return Math.min(e,Date.now()+864e5)})(),wSt=wEnd-366*864e5;
   const fx=(()=>{const K2=t=>t.a+"|"+(t.c||""),K=t=>K2(t)+"|"+Math.round(-t.x/100),M={},M2={},add=(o,k,t)=>{const e=o[k]||(o[k]={ms:new Set(),n:0});e.ms.add(ym(t));e.n++};
     T.forEach(t=>{if(t.x>=0||t.d<wSt||t.d>=wEnd)return;add(M,K(t),t);add(M2,K2(t),t)});
     const ok=(o,m)=>new Set(Object.keys(o).filter(k=>o[k].ms.size>=m&&o[k].n/o[k].ms.size<=1.5)),F=ok(M,6),F2=ok(M2,9);return t=>!!t.rc||F.has(K(t))||F2.has(K2(t))})();
   const ef=R.sc==="a"?0:D.filter(t=>t.x<0&&fx(t)).reduce((s,t)=>s-t.x,0),pc=v=>te>0?Math.round(v/te*100)+"% delle spese":"–";
   // Categoria in crescita: la categoria principale che spende di più rispetto al solito
-  const gw=(()=>{if(R.sc==="a")return"";let pk2,dv=1,lb;
+  const gw=(()=>{if(R.sc==="a"||R.sc==="r")return"";let pk2,dv=1,lb;
     if(R.sc==="m"){const [y1,m1]=R.m.split("-").map(Number),k3=[1,2,3].map(k=>mk(new Date(y1,m1-1-k,1).getTime()));pk2=t=>k3.includes(ym(t))&&(!cutM||new Date(t.d).getDate()<=tn);dv=k3.filter(k=>T.some(t=>ym(t)===k)).length;lb="in media nei 3 mesi precedenti"+(cutM?" (stessi giorni)":"")}
     else{const y0=String(+R.y-1);pk2=t=>ym(t).slice(0,4)===y0&&(!cutY||dk(t)<=tm*100+tn);lb="l’anno scorso"+(cutY?" nello stesso periodo":"")}
     if(!dv)return"";const ct=t=>{const c=t.c&&topc(t.c);return c?c:{i:"-",n:"no categoria"}},A={},B={};
@@ -552,8 +583,8 @@ function vRep(){
     const hi=D.filter(t=>t.x<0&&th(t)!=null&&-t.x>th(t)&&!fx(t)),sx=hi.reduce((s,t)=>s-t.x,0);
     return hi.length?ir("Spese insolite",hi.length+(hi.length===1?" spesa":" spese")+" molto sopra il solito per la loro categoria (almeno 3 volte la mediana e non meno di 150 €), escluse le spese fisse: "+pc(sx)+". Puoi segnarle come straordinarie in Altro → Straordinari",eur(sx)):ir("Spese insolite","Nessuna spesa molto sopra il solito per la propria categoria","–")})();
   const gs=R.sc==="a"?"":(()=>{const ds=new Set(D.filter(t=>t.x<0).map(t=>loc(t.d).slice(0,10)));return ir("Giorni senza spese","Giorni del periodo in cui non hai registrato nessuna spesa",Math.max(0,nd-ds.size)+" su "+nd)})();
-  const mp=(()=>{const nt={};T.forEach(t=>{const k=ym(t);nt[k]=(nt[k]||0)+t.x});const ms=(R.sc==="a"?Object.keys(nt):sel).filter(k=>k<cur&&k in nt);
-    return ms.length?ir("Mesi chiusi in positivo","Mesi in cui le entrate hanno superato le spese, "+(R.sc==="m"?"tra i 12 del grafico (senza il mese in corso)":R.sc==="y"?"tra i mesi chiusi dell’anno":"tra tutti i mesi chiusi"),ms.filter(k=>nt[k]>0).length+" su "+ms.length):""})();
+  const mp=(()=>{const nt={};T.forEach(t=>{const k=ym(t);nt[k]=(nt[k]||0)+t.x});const ms=(R.sc==="a"?Object.keys(nt):R.sc==="r"?rgM:sel).filter(k=>k<cur&&k in nt);
+    return ms.length?ir("Mesi chiusi in positivo","Mesi in cui le entrate hanno superato le spese, "+(R.sc==="m"?"tra i 12 del grafico (senza il mese in corso)":R.sc==="y"?"tra i mesi chiusi dell’anno":R.sc==="r"?"tra i mesi chiusi del periodo (anche se toccati solo in parte)":"tra tutti i mesi chiusi"),ms.filter(k=>nt[k]>0).length+" su "+ms.length):""})();
   const ox=[au,tp,xs,gs,mp].join("")?`<h2 style="margin-top:18px;font-size:15px">Altri indicatori</h2>`+au+tp+xs+gs+mp:"";
   const ix=ir("Spesa media al giorno","Spese del periodo divise per "+nd+(nd===1?" giorno":" giorni"),eur(te/nd))
     +(cutM&&ti-te>0&&dim-tn>0?ir("Puoi spendere al giorno","Per chiudere il mese in pari: entrate meno spese diviso i "+(dim-tn)+(dim-tn===1?" giorno":" giorni")+" che restano",eur((ti-te)/(dim-tn)),"pos"):"")
@@ -590,7 +621,7 @@ function vRep(){
 function vAcc(){
   const on=sortedAcc(),off=S.A.filter(a=>!a.on),tot=S.A.filter(a=>a.tot&&a.on).reduce((s,a)=>s+bal(a.i),0),nx=S.A.filter(a=>!a.tot&&a.on).length,ex=S.A.filter(a=>!a.tot&&a.on).reduce((s,a)=>s+bal(a.i),0);
   const li=a=>`<div class="row" style="cursor:default"><input value="${esc(a.n)}" onchange="ren('A','${a.i}',this.value)" style="flex:1"><span class="r ${bal(a.i)<0?"neg":""}" style="min-width:96px;cursor:pointer;text-decoration:underline dotted" title="Tocca per riconciliare il saldo" onclick="rcSrc='${a.i}';render()">${eur(bal(a.i))}</span>${ib(a.tot?"sum":"sumoff","togT('"+a.i+"')",a.tot?"Incluso nei totali: tocca per escludere":"Escluso dai totali: tocca per includere",a.tot?"p":"g")}${ib(a.on?"arch":"rest","togA('"+a.i+"')",a.on?"Archivia":"Riattiva")}</div>`+(rcSrc===a.i?`<div class="row" style="cursor:default"><span class="mut">Saldo reale:</span><input id="rc-v" inputmode="decimal" placeholder="${PV?"":(bal(a.i)/100).toFixed(2).replace(".",",")}" style="flex:1">${ib("check","doRec()","Conferma","p")}${ib("x","rcSrc=null;render()","Annulla")}</div>`:"");
-  $("#v").innerHTML=`<h1>Conti</h1><div class="card"><div class="sum"><span>Totale (conti inclusi nei totali)</span><b>${eur(tot)}</b></div>${nx?`<div class="sum"><span class="mut">Fuori dai totali (${nx})</span><b class="mut">${eur(ex)}</b></div>`:""}<p class="mut">Il simbolo Σ pieno indica un conto incluso nei totali, quello barrato un conto escluso. Vale anche per i report.</p>${on.map(li).join("")||'<p class="mut">Nessun conto.</p>'}</div>
+  $("#v").innerHTML=`<h1>Conti</h1><div class="card"><div class="sum"><span>Totale (conti inclusi nei totali)</span><b>${eur(tot)}</b></div>${netRows(tot)}${nx?`<div class="sum"><span class="mut">Fuori dai totali (${nx})</span><b class="mut">${eur(ex)}</b></div>`:""}<p class="mut">Il simbolo Σ pieno indica un conto incluso nei totali, quello barrato un conto escluso. Vale anche per i report.</p>${on.map(li).join("")||'<p class="mut">Nessun conto.</p>'}</div>
   ${ptCard()}<div class="card"><h2>Nuovo conto</h2><div class="two"><input id="na" placeholder="Nome, ad esempio Cassa"><select id="nt"><option value="CASH">contanti</option><option value="BANK">conto bancario</option><option value="CREDIT_CARD">carta di credito</option><option value="ELECTRONIC">elettronico</option><option value="OTHER">altro</option></select></div><p>${ib("plus","addA()","Aggiungi conto","p")}</p></div>
   ${off.length?`<div class="card"><h2>Archiviati</h2>${off.map(li).join("")}</div>`:""}`;
 }
@@ -602,7 +633,7 @@ function addA(){const n=$("#na").value.trim();if(!n)return;S.A.push({i:uid(),n,t
 /* ---------- Altro: categorie e dati ---------- */
 // Altro: una sezione alla volta, scelta dal menu interno (ricordata sul dispositivo)
 let mSec="dati";try{mSec=localStorage.getItem("cassetto_msec")||"dati"}catch(e){}
-const MSEC=[["dati","Dati e sincronizzazione"],["cat","Categorie"],["fix","Da sistemare"],["xo","Straordinari"],["fx","Costi fissi"],["dup","Duplicati"],["rc","Ricorrenti"],["ln","Mutui e prestiti"],["tp","Template"],["app","Aspetto e versione"]];
+const MSEC=[["dati","Dati e sincronizzazione"],["cat","Categorie"],["fix","Da sistemare"],["xo","Straordinari"],["fx","Costi fissi"],["nt","Note ricorrenti"],["dup","Duplicati"],["rc","Ricorrenti"],["ln","Mutui e prestiti"],["tp","Template"],["app","Aspetto e versione"]];
 function mGo(k){mSec=k;try{localStorage.setItem("cassetto_msec",k)}catch(e){}addP=null;mgSrc=null;mvSrc=null;catAct=null;xoN=20;render()}
 function vMore(){
   const kids=p=>S.C.filter(c=>(c.p||null)===p).sort((a,b)=>a.n.localeCompare(b.n,"it"));
@@ -619,7 +650,7 @@ function vMore(){
   const cnt={dup:dups.length,xo:mSec==="xo"?0:xoSug().length,fix:noCat().length},none=t=>`<div class="card"><p class="mut" style="margin:0">${t}</p></div>`;
   if(!MSEC.some(x=>x[0]===mSec)||(mSec==="dup"&&!dups.length))mSec="dati";
   const menu=`<div class="chips" style="margin:0 0 14px">${MSEC.filter(([k])=>k!=="dup"||dups.length).map(([k,n])=>`<button class="b ${k===mSec?"p":"g"} chip" aria-pressed="${k===mSec}" onclick="mGo('${k}')">${n}${cnt[k]?" ("+cnt[k]+")":""}</button>`).join("")}</div>`;
-  const body={dati:()=>`<div class="grid c2">${syncCard()}${datiCard()}</div>`,cat:()=>catCard,xo:()=>xoCard()||none("Nessun movimento straordinario segnato e nessuno da valutare."),fix:()=>fixCard()||none("Tutti i movimenti hanno una categoria."),fx:()=>fxCard()||none("Nessun costo fisso trovato negli ultimi 12 mesi."),dup:()=>dupCard,rc:rcCard,ln:lnCard,tp:tpCard,
+  const body={dati:()=>`<div class="grid c2">${syncCard()}${datiCard()}</div>`,cat:()=>catCard,xo:()=>xoCard()||none("Nessun movimento straordinario segnato e nessuno da valutare."),fix:()=>fixCard()||none("Tutti i movimenti hanno una categoria."),fx:()=>fxCard()||none("Nessun costo fisso trovato negli ultimi 12 mesi."),nt:()=>ntCard()||none("Nessuna nota usata almeno 3 volte."),dup:()=>dupCard,rc:rcCard,ln:lnCard,tp:tpCard,
     app:()=>`<div class="grid c2"><div class="card"><h2>Tema</h2><select id="th" onchange="th(this.value)"><option value="">automatico</option><option value="light">chiaro</option><option value="dark">scuro</option></select></div>
   <div class="card"><h2>Informazioni</h2><p class="mut" style="margin:0">${appInfo()}</p></div></div>`};
   const catCard=`<div class="card"><h2>Categorie</h2><div class="cr" style="margin:4px 0 8px"><input id="ac-q" placeholder="Filtra o aggiungi categoria" oninput="acRun()" value="${esc(aqr)}" autocomplete="off" style="flex:1;min-width:0"><button class="b g cx" title="Aggiungi categoria" aria-label="Aggiungi categoria" onclick="acAdd()">${ic("plus",18)}</button></div>${addP===""?addCRow(0):""}<div id="ac-tree">${acT()}</div></div>`;
@@ -650,6 +681,15 @@ function fxCard(){const l=fxList();if(!l.length)return"";const tm=l.reduce((s,o)
   return `<div class="card"><h2>Costi fissi (${l.length})</h2><p class="mut">Pagamenti che si ripetono quasi ogni mese negli ultimi 12 mesi (stesso conto, categoria e nota), ancora attivi, più le ricorrenze. Costo al mese = media degli ultimi 3 pagamenti.${up?" Aumentati rispetto a un anno fa: "+up+".":""}</p>
   <div class="sum"><span>Totale al mese<small>circa ${eur(tm*12)} all’anno</small></span><b class="neg">${eur(tm)}</b></div>
   ${l.map(o=>`<div class="row" onclick="edit('${o.t.i}')"><div class="m"><b>${lab(o.t)}</b><small>${esc(an(o.t.a))} · ${o.ms} mesi su 12 · ultimo ${dt(o.t.d)}${o.up!=null?` · <span class="neg">aumentato da ${eur(o.up)} a ${eur(-o.t.x)}</span>`:o.dn!=null?` · <span class="pos">sceso da ${eur(o.dn)} a ${eur(-o.t.x)}</span>`:""}</small></div><div class="r"><b>${eur(o.mo)}</b><small style="display:block" class="mut">${eur(o.yr)} in 12 mesi</small></div></div>`).join("")}</div>`}
+/* Note ricorrenti: le note usate almeno 3 volte (minuscole, senza numeri finali: "ikea2" = "ikea") fanno da etichette,
+   con totale speso e incassato su tutto lo storico; trasferimenti esclusi. Un tocco apre Movimenti cercando quella nota */
+let ntN=40,ntL=[];
+function ntCard(){const G={};S.T.forEach(t=>{if(t.b)return;const n=nNorm(t.n);if(!n)return;const g=G[n]||(G[n]={n,c:0,e:0,i:0,f:t.d,l:t.d});g.c++;if(t.x<0)g.e-=t.x;else g.i+=t.x;if(t.d<g.f)g.f=t.d;if(t.d>g.l)g.l=t.d});
+  const l=Object.values(G).filter(g=>g.c>=3).sort((p,q)=>q.e+q.i-p.e-p.i);ntL=l;if(!l.length)return"";
+  return `<div class="card"><h2>Note ricorrenti (${l.length})</h2><p class="mut">Le note che usi almeno 3 volte funzionano da etichette (persone, progetti, negozi): qui il totale di ciascuna su tutto lo storico, trasferimenti esclusi. Tocca una nota per vedere i suoi movimenti.</p>
+  ${l.slice(0,ntN).map((g,k)=>`<div class="row" onclick="ntGo(${k})"><div class="m"><b>${esc(g.n)}</b><small>${g.c} movimenti · dal ${dt(g.f)} al ${dt(g.l)}</small></div><div class="r">${g.e?`<b class="neg">${eur(-g.e)}</b>`:""}${g.i?`<small style="display:block" class="pos">+${eur(g.i)}</small>`:""}</div></div>`).join("")}
+  ${l.length>ntN?`<p>${ib("chd","ntN+=40;render()","Mostra altre")}</p>`:""}</div>`}
+function ntGo(k){const g=ntL[k];if(!g)return;F.q=g.n;F.a="";F.m="";F.y="";F.c=null;F.cl="";F.ids=null;F.rep=false;F.n=100;tab="list";render()}
 /* Spese straordinarie: restano nei saldi, escono dai report (R.xo). Suggerite: almeno 3 volte la mediana della categoria (o della principale) e non meno di 150 €; senza statistiche, da 1.000 € */
 let xoN=20;
 // Statistiche per spese ed entrate separate (chiave: segno + categoria). th: soglia "molto sopra il solito";
@@ -684,7 +724,7 @@ function pvTog(){PV=!PV;try{localStorage.setItem("cassetto_pv",PV?"1":"0")}catch
 let dm=null; // conferma in corso: {k:"json",j,name} oppure {k:"del"}
 const nTot=o=>`${(o.A||[]).length} conti, ${(o.C||[]).length} categorie, ${(o.T||[]).length} movimenti`;
 const drvW=()=>gOn()?" "+gName()+" è collegato: alla prossima sincronizzazione la modifica arriva anche lì e sugli altri dispositivi.":"";
-const NEWS=()=>({A:[],C:[],T:[],D:[],L:{},RC:[],LN:[]});
+const NEWS=()=>({A:[],C:[],T:[],D:[],L:{},RC:[],LN:[],V:[]});
 function datiCard(){
   const row=(t,d,b)=>`<div class="row" style="cursor:default"><div class="m"><b style="white-space:normal">${t}</b><small>${d}</small></div>${b}</div>`;
   const fb=(id,t,acc)=>`<label class="fb" title="${t}" aria-label="${t}">${ic("up")}<input type="file" id="${id}"${acc?` accept="${acc}"`:""}></label>`;
