@@ -219,6 +219,14 @@ const kind=t=>t.b?"t":t.x<0?"e":"i";
 const acc=i=>S.A.find(a=>a.i===i);
 const lastAcc=()=>{let b=null;S.T.forEach(t=>{const a=acc(t.a);if(a&&a.on&&(!b||t.d>b.d))b=t});return b?b.a:(S.A.find(a=>a.on)||{}).i};
 const defCat=(a,k)=>{if(k==="t")return null;const w=Date.now()-365*864e5,cnt=f=>{const m={};S.T.forEach(t=>{if(t.a===a&&!t.b&&t.c&&!(cm[t.c]||{}).ar&&kind(t)===k&&f(t))m[t.c]=(m[t.c]||0)+1});return Object.entries(m).sort((p,q)=>q[1]-p[1])[0]};const r=cnt(t=>t.d>w)||cnt(()=>true);return r?r[0]:null};
+// Categoria proposta dalla nota: tra i movimenti dello stesso tipo con la stessa nota (minuscole, senza numeri finali: "ikea2" = "ikea"),
+// la categoria usata almeno 2 volte e in almeno il 60% dei casi
+const nNorm=n=>String(n||"").toLowerCase().trim().replace(/[\s\d]+$/,"").trim();
+function noteIdx(){const m={};S.T.forEach(t=>{if(t.b||!t.c||!cm[t.c]||cm[t.c].ar)return;const n=nNorm(t.n);if(!n)return;const k=kind(t)+"|"+n,o=m[k]||(m[k]={n:0,c:{}});o.n++;o.c[t.c]=(o.c[t.c]||0)+1});return m}
+function noteCat(ix,n,k){const o=ix[k+"|"+nNorm(n)];if(!o)return null;const b=Object.entries(o.c).sort((p,q)=>q[1]-p[1])[0];return b&&b[1]>=2&&b[1]/o.n>=.6?b[0]:null}
+let nIx=null;
+function nsRun(){const box=$("#f-ns");if(!box)return;const c=ek==="t"?null:noteCat(nIx||(nIx=noteIdx()),$("#f-n").value,ek);
+  box.innerHTML=c&&c!==$("#f-c").value?`<button class="b g chip" style="margin-top:6px" title="Usa la categoria suggerita dalla nota" onclick="setCat('${c}');catTouched=true;nsRun()">${ic("tag",16)} ${esc(path(c))}</button>`:""}
 function setCat(c){$("#f-c").value=c||"";$("#f-cb").textContent=c?path(c):"no categoria"}
 function accCh(){const a=$("#f-a").value;if(!editId)$("#f-tp").innerHTML=chips(a);if(ek==="t"&&!editId)$("#f-b").innerHTML=toOpts(a,defTo(a));if(editId||catTouched)return;setCat(defCat(a,ek))}
 const tstat=a=>{const w=Date.now()-365*864e5,r={},n={};S.T.forEach(t=>{if(t.a===a&&t.b){n[t.b]=(n[t.b]||0)+1;if(t.d>w)r[t.b]=(r[t.b]||0)+1}});return{r,n}};
@@ -391,7 +399,7 @@ function goAcc(i){F.a=i;F.m="";F.y="";F.q="";F.c=null;F.cl="";F.ids=null;F.rep=f
 
 /* ---------- Aggiungi / modifica ---------- */
 let xoF=false,ek="e",catTouched=false,pre=null,tpMore=false,tpAll=false,tpK="e",accTouched=false,mgSrc=null,mvSrc=null,catAct=null,rcSrc=null,PT={a:"",r:"12"};
-function vAdd(){
+function vAdd(){nIx=null;
   const t=editId?S.T.find(x=>x.i===editId):null,pr=editId?null:pre;pre=null;catTouched=!!pr;accTouched=!!pr;
   if(t)ek=kind(t);if(pr)ek=pr.k;xoF=!!(t&&t.xo);
   const L=S.L,a0=t?t.a:pr?pr.a:accFor(ek),c0=t?t.c:pr?pr.c:defCat(a0,ek),b0=t?t.b:pr?pr.b:defTo(a0);
@@ -403,12 +411,12 @@ function vAdd(){
   <div id="f-bw" class="${ek==="t"?"":"hide"}"><label>Verso il conto</label><select id="f-b">${toOpts(a0,b0)}</select></div>
   <div id="f-cw"><label>Categoria</label><input type="hidden" id="f-c" value="${c0||""}"><button class="b g" id="f-cb" onclick="cpOpen()" style="width:100%;text-align:left">${c0?esc(path(c0)):"no categoria"}</button><div id="f-cp" class="card hide" style="max-height:50vh;overflow:auto;margin:6px 0 0"></div></div>
   <label>Data e ora</label><input id="f-d" type="datetime-local" value="${loc(t?t.d:Date.now())}">
-  <label>Nota</label><input id="f-n" value="${esc(t?t.n:pr?pr.n:"")}" autocomplete="off">
+  <label>Nota</label><input id="f-n" value="${esc(t?t.n:pr?pr.n:"")}" autocomplete="off" oninput="nsRun()"><div id="f-ns"></div>
   <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><button class="b ic" style="flex:1;width:auto" title="${t?"Salva modifiche":"Aggiungi"}" aria-label="${t?"Salva modifiche":"Aggiungi"}" onclick="saveTx()">${ic("check",24)}</button>${t?"":`<button class="b g ic" style="flex:1;width:auto" title="Salva e nuovo" aria-label="Salva e nuovo" onclick="saveTx(1)">${ic("checkplus",24)}</button>`+ib("rest","addReset()","Annulla e ricomincia")}${xoBtn()}${t?ib("x","editId=null;tab='list';render()","Annulla")+ib("repeat","mkRc()","Rendi ricorrente (ogni mese)")+ib("trash","delTx()","Elimina","d"):""}</div></div></div>
   </div>`;
   if(!t&&window.matchMedia&&matchMedia("(pointer:fine)").matches)setTimeout(()=>$("#f-amt").focus(),50); // niente focus sul telefono: non apre la tastiera da sola
 }
-const xoTit=()=>xoF?"Straordinaria: tocca per togliere il segno":"Segna come spesa straordinaria (esce dai report)";
+const xoTit=()=>xoF?"Straordinario: tocca per togliere il segno":"Segna come movimento straordinario (esce dai report)";
 const xoBtn=()=>`<button class="b ${xoF?"p":"g"} ic" id="f-xo" title="${xoTit()}" aria-label="${xoTit()}" aria-pressed="${xoF}" onclick="xoTog()">${ic("xo",22)}</button>`;
 function xoTog(){xoF=!xoF;$("#f-xo").outerHTML=xoBtn()}
 function addReset(){pre=null;tpMore=false;render()} // ricarica il modulo con i valori predefiniti del tipo scelto
@@ -430,7 +438,7 @@ function delTx(){S.T=S.T.filter(x=>x.i!==editId);S.D.push(editId);editId=null;ta
 function edit(i){editId=i;tab="add";render()}
 function rows(l,sa,fa){return l.map(t=>{const k=kind(t),cn=t.c?path(t.c):"",an=(acc(t.a)||{}).n||"?";
   const sub=k==="t"?`${esc(an)} → ${esc((acc(t.b)||{}).n||"?")}${cn?" › "+esc(cn):""}`:`${sa?esc(an)+" › ":""}${cn?esc(cn):"no categoria"}`;
-  return `<div class="row" onclick="edit('${t.i}')"><div class="m"><b>${t.xo?`<span title="Straordinaria" style="color:var(--acc)">${ic("xo",14)}</span> `:""}${sub}${t.n?" ("+esc(t.n)+")":""}</b><small>${dt(t.d)}</small></div><div class="r ${k==="e"?"neg":k==="i"?"pos":k==="t"&&fa&&(t.a===fa||t.b===fa)?(t.a===fa?"neg":"pos"):""}">${eur(k==="t"?(fa&&t.a===fa?-Math.abs(t.x):fa&&t.b===fa?Math.abs(t.y):t.y):t.x)}</div><button class="b g ic sm" title="Duplica" aria-label="Duplica" onclick="event.stopPropagation();cloneTx('${t.i}')">${ic("copy",18)}</button></div>`}).join("")}
+  return `<div class="row" onclick="edit('${t.i}')"><div class="m"><b>${t.xo?`<span title="Straordinario" style="color:var(--acc)">${ic("xo",14)}</span> `:""}${sub}${t.n?" ("+esc(t.n)+")":""}</b><small>${dt(t.d)}</small></div><div class="r ${k==="e"?"neg":k==="i"?"pos":k==="t"&&fa&&(t.a===fa||t.b===fa)?(t.a===fa?"neg":"pos"):""}">${eur(k==="t"?(fa&&t.a===fa?-Math.abs(t.x):fa&&t.b===fa?Math.abs(t.y):t.y):t.x)}</div><button class="b g ic sm" title="Duplica" aria-label="Duplica" onclick="event.stopPropagation();cloneTx('${t.i}')">${ic("copy",18)}</button></div>`}).join("")}
 
 /* ---------- Movimenti ---------- */
 /* Selettore del mese: quello nativo del browser (a scorrimento sul telefono) dove esiste, altrimenti due menu mese/anno */
@@ -475,8 +483,8 @@ function lrows(){
 /* ---------- Report ---------- */
 let RG=[];
 let R={sc:"m",m:loc(Date.now()).slice(0,7),y:loc(Date.now()).slice(0,4),xo:true}; // xo: escludi le spese straordinarie
-function xoRow(l){const v=l.reduce((s,t)=>s+Math.abs(t.x),0),tt=R.xo?"Spese straordinarie escluse: tocca per includerle":"Spese straordinarie incluse: tocca per escluderle";
-  return `<div style="grid-column:1/-1;display:flex;align-items:center;gap:10px"><span class="mut" style="flex:1">${R.xo?(l.length?(l.length===1?"Esclusa 1 spesa straordinaria":"Escluse "+l.length+" spese straordinarie")+" del periodo: "+eur(v):"Spese straordinarie escluse (nessuna nel periodo)"):"Spese straordinarie incluse"+(l.length?": "+l.length+" nel periodo, "+eur(v):"")}</span><button class="b ${R.xo?"p":"g"} ic sm" title="${tt}" aria-label="${tt}" aria-pressed="${R.xo}" onclick="R.xo=!R.xo;render()">${ic("xo",18)}</button></div>`}
+function xoRow(l){const e=l.reduce((s,t)=>s+(t.x<0?-t.x:0),0),i=l.reduce((s,t)=>s+(t.x>0?t.x:0),0),v=[e?"spese "+eur(e):"",i?"entrate "+eur(i):""].filter(Boolean).join(", "),tt=R.xo?"Movimenti straordinari esclusi: tocca per includerli":"Movimenti straordinari inclusi: tocca per escluderli";
+  return `<div style="grid-column:1/-1;display:flex;align-items:center;gap:10px"><span class="mut" style="flex:1">${R.xo?(l.length?(l.length===1?"Escluso 1 movimento straordinario":"Esclusi "+l.length+" movimenti straordinari")+" del periodo: "+v:"Movimenti straordinari esclusi (nessuno nel periodo)"):"Movimenti straordinari inclusi"+(l.length?": "+l.length+" nel periodo, "+v:"")}</span><button class="b ${R.xo?"p":"g"} ic sm" title="${tt}" aria-label="${tt}" aria-pressed="${R.xo}" onclick="R.xo=!R.xo;render()">${ic("xo",18)}</button></div>`}
 function vRep(){
   RG=[];
   const gids=k=>k==="-"?["-"]:S.C.filter(c=>{const tp=topc(c.i);return tp&&tp.i===k}).map(c=>c.i);
@@ -486,7 +494,7 @@ function vRep(){
   const per=t=>R.sc==="a"||(R.sc==="y"?ym(t).slice(0,4)===R.y:ym(t)===R.m);
   const flt=R.sc==="m"?`<label>Mese</label>${mpick("rm",R.m)}`:R.sc==="y"?`<label>Anno</label><select id="ry">${yrs.map(y=>`<option${y===R.y?" selected":""}>${y}</option>`).join("")}</select>`:"";
   $("#v").innerHTML=`<h1>Report</h1><div class="card two"><div><label>Periodo</label><select id="rs">${[["m","mese"],["y","anno"],["a","tutto"]].map(([k,n])=>`<option value="${k}"${R.sc===k?" selected":""}>${n}</option>`).join("")}</select></div><div>${flt}</div><p class="mut" id="rper" style="grid-column:1/-1;margin:0"></p>${xoRow(XO.filter(per))}</div>
-  <div class="grid c3"><div class="card"><h2>${{m:"Ultimi 12 mesi",y:"Mesi dell’anno",a:"Anni"}[R.sc]}</h2><div class="cv"><canvas id="c1"></canvas></div></div><div class="card"><h2>Spese per categoria</h2><div class="cv"><canvas id="c2"></canvas></div></div></div><div class="grid c3"><div class="card" id="ri"></div><div class="card" id="rcmp"></div></div><div class="card" id="rtop"></div><div class="card" id="rt"></div>`;
+  <div class="grid c3"><div class="card"><h2>${{m:"Ultimi 12 mesi",y:"Mesi dell’anno",a:"Anni"}[R.sc]}</h2><div class="cv"><canvas id="c1"></canvas></div></div><div class="card"><h2>Spese per categoria</h2><div class="cv"><canvas id="c2"></canvas></div></div></div><div class="grid c3"><div class="card" id="ri"></div><div class="card" id="rcmp"></div></div>${R.sc==="a"?'<div class="card" id="ryr"></div>':""}<div class="card" id="rtop"></div><div class="card" id="rt"></div>`;
   $("#rs").onchange=e=>{R.sc=e.target.value;render()};
   if($("#rm"))$("#rm").onchange=()=>{R.m=mval("rm")||R.m;render()};
   if($("#ry"))$("#ry").onchange=e=>{R.y=e.target.value;render()};
@@ -542,7 +550,7 @@ function vRep(){
     T.forEach(t=>{if(t.x<0&&t.d>=wSt&&t.d<wEnd){(Lf[t.c||"-"]=Lf[t.c||"-"]||[]).push(-t.x);(Lt[tk(t)]=Lt[tk(t)]||[]).push(-t.x)}});
     const mk3=L=>{const o={};Object.keys(L).forEach(k=>{if(L[k].length>=5){const a=L[k].slice().sort((p,q)=>p-q);o[k]=Math.max(15000,3*a[a.length>>1])}});return o},tf=mk3(Lf),tt=mk3(Lt),th=t=>tf[t.c||"-"]!=null?tf[t.c||"-"]:tt[tk(t)];
     const hi=D.filter(t=>t.x<0&&th(t)!=null&&-t.x>th(t)&&!fx(t)),sx=hi.reduce((s,t)=>s-t.x,0);
-    return hi.length?ir("Spese insolite",hi.length+(hi.length===1?" spesa":" spese")+" molto sopra il solito per la loro categoria (almeno 3 volte la mediana e non meno di 150 €), escluse le spese fisse: "+pc(sx)+". Puoi segnarle come straordinarie in Altro",eur(sx)):ir("Spese insolite","Nessuna spesa molto sopra il solito per la propria categoria","–")})();
+    return hi.length?ir("Spese insolite",hi.length+(hi.length===1?" spesa":" spese")+" molto sopra il solito per la loro categoria (almeno 3 volte la mediana e non meno di 150 €), escluse le spese fisse: "+pc(sx)+". Puoi segnarle come straordinarie in Altro → Straordinari",eur(sx)):ir("Spese insolite","Nessuna spesa molto sopra il solito per la propria categoria","–")})();
   const gs=R.sc==="a"?"":(()=>{const ds=new Set(D.filter(t=>t.x<0).map(t=>loc(t.d).slice(0,10)));return ir("Giorni senza spese","Giorni del periodo in cui non hai registrato nessuna spesa",Math.max(0,nd-ds.size)+" su "+nd)})();
   const mp=(()=>{const nt={};T.forEach(t=>{const k=ym(t);nt[k]=(nt[k]||0)+t.x});const ms=(R.sc==="a"?Object.keys(nt):sel).filter(k=>k<cur&&k in nt);
     return ms.length?ir("Mesi chiusi in positivo","Mesi in cui le entrate hanno superato le spese, "+(R.sc==="m"?"tra i 12 del grafico (senza il mese in corso)":R.sc==="y"?"tra i mesi chiusi dell’anno":"tra tutti i mesi chiusi"),ms.filter(k=>nt[k]>0).length+" su "+ms.length):""})();
@@ -568,9 +576,14 @@ function vRep(){
   $("#rcmp").innerHTML=pk?`<h2>Spese: ${esc(R.sc==="m"?ml(R.m):R.y)} contro ${esc(pl)}</h2>${R.sc==="m"?`<select id="rcm" style="margin-bottom:8px"><option value="p"${R.cmp!=="y"?" selected":""}>confronta con il mese precedente</option><option value="y"${R.cmp==="y"?" selected":""}>confronta con lo stesso mese dell’anno scorso</option></select>`:""}${ch2}`:`<h2>Confronto</h2><p class="mut">Scegli mese o anno per confrontare le spese con il periodo precedente.</p>`;
   if($("#rcm"))$("#rcm").onchange=e=>{R.cmp=e.target.value;render()};
   $("#rtop").innerHTML=`<h2>Spese più alte del periodo</h2>`+(rows(D.filter(t=>t.x<0).sort((p,q)=>p.x-q.x).slice(0,5),1)||'<p class="mut">Nessuna spesa nel periodo.</p>')}
+  if($("#ryr")){const Y={},cy=loc(Date.now()).slice(0,4); // Anni a confronto: stessi movimenti del report (straordinarie escluse se l'interruttore è attivo)
+    T.forEach(t=>{const y=ym(t).slice(0,4),o=Y[y]||(Y[y]={e:0,i:0,c:{}});if(t.x<0){o.e-=t.x;const c=t.c&&topc(t.c),k=c?c.n:"no categoria";o.c[k]=(o.c[k]||0)-t.x}else o.i+=t.x});
+    const pct=o=>o.i>0?((o.i-o.e)/o.i<-1?"sotto -100%":Math.round((o.i-o.e)/o.i*100)+"%"):"–";
+    $("#ryr").innerHTML=`<h2>Anni a confronto</h2><p class="mut">Risparmio = entrate meno spese; tasso = quota delle entrate non spesa.${R.xo?" Movimenti straordinari esclusi.":""} Tocca un anno per le sue 5 categorie più costose.</p><table><tr><th></th><th class="dcol">Entrate</th><th>Spese</th><th>Risparmio</th><th class="dcol">Tasso</th></tr>${Object.keys(Y).sort().reverse().map(y=>{const o=Y[y],top=Object.entries(o.c).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      return `<tbody><tr><td colspan="5" style="padding:0;border:0"><details><summary><table style="margin:0"><tr><td><b>${y}${y===cy?" (in corso)":""}</b><small class="dsub">entrate ${eur(o.i)} · tasso ${pct(o)}</small></td><td class="dcol">${eur(o.i)}</td><td>${eur(o.e)}</td><td class="${o.i-o.e<0?"neg":"pos"}">${eur(o.i-o.e)}</td><td class="dcol">${pct(o)}</td></tr></table></summary><table>${top.map(([n,v])=>`<tr class="sub"><td>${esc(n)}</td><td class="dcol"></td><td>${eur(v)}</td><td class="mut">${o.e?Math.round(v/o.e*100)+"%":""}</td><td class="dcol"></td></tr>`).join("")}</table></details></td></tr></tbody>`}).join("")}</table>`}
   $("#rt").innerHTML=`<div class="sum"><span>Entrate</span><b class="pos">${eur(ti)}</b></div><div class="sum"><span>Spese</span><b class="neg">${eur(-te)}</b></div><div class="sum"><span>Saldo del periodo</span><b>${eur(ti-te)}</b></div>
   <h2 style="margin-top:18px">Per categoria</h2><table><tr><th></th><th>Spese</th><th>Entrate</th><th class="dcol">Differenza</th><th class="rbtn"></th></tr>${G.map(x=>{const s=Object.values(x.s).sort((a,b)=>b.e-a.e),gi=RG.push({c:gids(x.k),l:x.n})-1;return `<tbody><tr><td colspan="5" style="padding:0;border:0"><details><summary><table style="margin:0"><tr><td><b>${esc(x.n)}</b><small class="dsub ${x.i<x.e?"neg":"pos"}">Differenza ${eur(x.i-x.e)}</small></td><td>${x.e?eur(x.e):"–"}</td><td>${x.i?eur(x.i):"–"}</td><td class="dcol ${x.i<x.e?"neg":"pos"}">${eur(x.i-x.e)}</td><td class="rbtn">${rb(gi)}</td></tr></table></summary><table>${s.map(y=>`<tr class="sub"><td>${esc(y.n)}<small class="dsub ${y.i<y.e?"neg":"pos"}">Differenza ${eur(y.i-y.e)}</small></td><td>${y.e?eur(y.e):"–"}</td><td>${y.i?eur(y.i):"–"}</td><td class="dcol ${y.i<y.e?"neg":"pos"}">${eur(y.i-y.e)}</td><td class="rbtn">${rb(RG.push({c:[y.k],l:y.n})-1)}</td></tr>`).join("")}</table></details></td></tr></tbody>`}).join("")}</table>${G.length?"":'<p class="mut">Nessun movimento nel periodo.</p>'}
-  <p class="mut">I report escludono i trasferimenti, i conti fuori dai totali e, con l’interruttore attivo, le spese straordinarie.</p>`;
+  <p class="mut">I report escludono i trasferimenti, i conti fuori dai totali e, con l’interruttore attivo, i movimenti straordinari.</p>`;
 }
 
 /* ---------- Conti ---------- */
@@ -589,7 +602,7 @@ function addA(){const n=$("#na").value.trim();if(!n)return;S.A.push({i:uid(),n,t
 /* ---------- Altro: categorie e dati ---------- */
 // Altro: una sezione alla volta, scelta dal menu interno (ricordata sul dispositivo)
 let mSec="dati";try{mSec=localStorage.getItem("cassetto_msec")||"dati"}catch(e){}
-const MSEC=[["dati","Dati e sincronizzazione"],["cat","Categorie"],["xo","Spese straordinarie"],["dup","Duplicati"],["rc","Ricorrenti"],["ln","Mutui e prestiti"],["tp","Template"],["app","Aspetto e versione"]];
+const MSEC=[["dati","Dati e sincronizzazione"],["cat","Categorie"],["fix","Da sistemare"],["xo","Straordinari"],["fx","Costi fissi"],["dup","Duplicati"],["rc","Ricorrenti"],["ln","Mutui e prestiti"],["tp","Template"],["app","Aspetto e versione"]];
 function mGo(k){mSec=k;try{localStorage.setItem("cassetto_msec",k)}catch(e){}addP=null;mgSrc=null;mvSrc=null;catAct=null;xoN=20;render()}
 function vMore(){
   const kids=p=>S.C.filter(c=>(c.p||null)===p).sort((a,b)=>a.n.localeCompare(b.n,"it"));
@@ -603,10 +616,10 @@ function vMore(){
   const arcSec=()=>{const A=S.C.filter(c=>c.ar),q=aqv(),sub=(p,d)=>S.C.filter(c=>c.p===p&&c.ar).sort((x,y)=>x.n.localeCompare(y.n,"it")).map(c=>`<div class="row" style="cursor:default;padding-left:${4+d*20}px;opacity:.7"><span style="flex:1">${esc(c.n)}</span></div>`+sub(c.i,d+1)).join(""),hit=c=>!q||c.n.toLowerCase().includes(q)||path(c.i).toLowerCase().includes(q)||S.C.some(y=>y.p===c.i&&y.ar&&hit(y)),l=A.filter(c=>!(c.p&&cm[c.p]&&cm[c.p].ar)&&hit(c)).sort((x,y)=>path(x.i).localeCompare(path(y.i),"it"));
     return `<h2 style="margin:18px 0 8px;font-size:15px">Archiviate (${A.length})</h2>`+(l.length?`<div class="scr">${l.map(c=>`<div class="row" style="cursor:default"><span style="flex:1">${esc(path(c.i))}</span>${ib("rest","arcC('"+c.i+"',0)","Ripristina categoria")}</div>`+sub(c.i,1)).join("")}</div>`:`<p class="mut">${A.length?"Nessuna archiviata trovata.":"Nessuna categoria archiviata."}</p>`)};
   acT=()=>'<div class="scr">'+(tree(null,0)||'<p class="mut">'+(aqv()?"Nessuna categoria trovata: premi + per crearla.":"Nessuna categoria.")+'</p>')+'</div>'+arcSec();
-  const cnt={dup:dups.length,xo:mSec==="xo"?0:xoSug().length},none=t=>`<div class="card"><p class="mut" style="margin:0">${t}</p></div>`;
+  const cnt={dup:dups.length,xo:mSec==="xo"?0:xoSug().length,fix:noCat().length},none=t=>`<div class="card"><p class="mut" style="margin:0">${t}</p></div>`;
   if(!MSEC.some(x=>x[0]===mSec)||(mSec==="dup"&&!dups.length))mSec="dati";
   const menu=`<div class="chips" style="margin:0 0 14px">${MSEC.filter(([k])=>k!=="dup"||dups.length).map(([k,n])=>`<button class="b ${k===mSec?"p":"g"} chip" aria-pressed="${k===mSec}" onclick="mGo('${k}')">${n}${cnt[k]?" ("+cnt[k]+")":""}</button>`).join("")}</div>`;
-  const body={dati:()=>`<div class="grid c2">${syncCard()}${datiCard()}</div>`,cat:()=>catCard,xo:()=>xoCard()||none("Nessuna spesa straordinaria segnata e nessuna da valutare."),dup:()=>dupCard,rc:rcCard,ln:lnCard,tp:tpCard,
+  const body={dati:()=>`<div class="grid c2">${syncCard()}${datiCard()}</div>`,cat:()=>catCard,xo:()=>xoCard()||none("Nessun movimento straordinario segnato e nessuno da valutare."),fix:()=>fixCard()||none("Tutti i movimenti hanno una categoria."),fx:()=>fxCard()||none("Nessun costo fisso trovato negli ultimi 12 mesi."),dup:()=>dupCard,rc:rcCard,ln:lnCard,tp:tpCard,
     app:()=>`<div class="grid c2"><div class="card"><h2>Tema</h2><select id="th" onchange="th(this.value)"><option value="">automatico</option><option value="light">chiaro</option><option value="dark">scuro</option></select></div>
   <div class="card"><h2>Informazioni</h2><p class="mut" style="margin:0">${appInfo()}</p></div></div>`};
   const catCard=`<div class="card"><h2>Categorie</h2><div class="cr" style="margin:4px 0 8px"><input id="ac-q" placeholder="Filtra o aggiungi categoria" oninput="acRun()" value="${esc(aqr)}" autocomplete="off" style="flex:1;min-width:0"><button class="b g cx" title="Aggiungi categoria" aria-label="Aggiungi categoria" onclick="acAdd()">${ic("plus",18)}</button></div>${addP===""?addCRow(0):""}<div id="ac-tree">${acT()}</div></div>`;
@@ -614,21 +627,49 @@ function vMore(){
   if($("#th"))$("#th").value=document.documentElement.dataset.theme||"";
   if($("#fi"))$("#fi").onchange=e=>{const f=e.target.files[0];e.target.value="";imp(f)};if($("#fj"))$("#fj").onchange=e=>{const f=e.target.files[0];e.target.value="";imp(f,"json")};if(addP!==null&&$("#nc")){$("#nc").focus();$("#nc").select()}else if(tcv&&$("#tc-n")){$("#tc-n").focus();$("#tc-n").select()}
 }
+/* Da sistemare: spese ed entrate senza categoria (i trasferimenti possono restarne senza) */
+let fixN=30;
+const noCat=()=>S.T.filter(t=>!t.b&&!t.c).sort((p,q)=>q.d-p.d);
+function fixCard(){const l=noCat();if(!l.length)return"";const ix=noteIdx(),pr=l.map(t=>noteCat(ix,t.n,kind(t))),np=pr.filter(Boolean).length;
+  const opts=S.C.filter(c=>!c.ar).map(c=>[c.i,path(c.i)]).sort((a,b)=>a[1].localeCompare(b[1],"it")).map(([i,n])=>`<option value="${i}">${esc(n)}</option>`).join("");
+  return `<div class="card"><h2>Da sistemare (${l.length})</h2><p class="mut">Movimenti senza categoria, dal più recente. Quando la nota è già stata usata quasi sempre con la stessa categoria, la trovi proposta: toccala per assegnarla.</p>
+  ${np?`<p>${ib("check","fixAll()","Assegna tutte le "+np+" categorie proposte","p")} <span class="mut">${np} proposte dalla nota</span></p>`:""}
+  ${l.slice(0,fixN).map((t,k)=>rows([t],1)+`<div class="row" style="cursor:default;gap:8px;flex-wrap:wrap">${pr[k]?`<button class="b g chip" title="Assegna la categoria proposta" onclick="fixSet('${t.i}','${pr[k]}')">${ic("tag",16)} ${esc(path(pr[k]))}</button>`:""}<select aria-label="Scegli la categoria" style="flex:1;min-width:0" onchange="fixSet('${t.i}',this.value)"><option value="">scegli la categoria…</option>${opts}</select></div>`).join("")}
+  ${l.length>fixN?`<p>${ib("chd","fixN+=30;render()","Mostra altri")}</p>`:""}</div>`}
+function fixSet(i,c){const t=S.T.find(x=>x.i===i);if(!t||!c||!cm[c])return;t.c=c;if(t.s==="f")t.s="a";save();toast("Categoria assegnata: "+path(c));render()}
+function fixAll(){const ix=noteIdx();let n=0;noCat().forEach(t=>{const c=noteCat(ix,t.n,kind(t));if(c){t.c=c;if(t.s==="f")t.s="a";n++}});save();toast(n+(n===1?" categoria assegnata":" categorie assegnate"));render()}
+/* Costi fissi: negli ultimi 12 mesi, stesso conto, categoria e nota in almeno 6 mesi diversi (al massimo 1,5 volte al mese),
+   con l'ultimo pagamento negli ultimi 45 giorni; oppure nati da una ricorrenza. Escluse le spese straordinarie */
+function fxList(){const now=Date.now(),st=now-365*864e5,inc=new Set(S.A.filter(a=>a.tot).map(a=>a.i)),G={};
+  S.T.forEach(t=>{if(t.b||t.x>=0||t.xo||t.d<st||t.d>now||!inc.has(t.a))return;const k=t.rc?"rc|"+t.rc:t.a+"|"+(t.c||"")+"|"+nNorm(t.n),g=G[k]||(G[k]={l:[],rc:!!t.rc});g.l.push(t)});
+  return Object.values(G).map(g=>{const l=g.l.sort((p,q)=>p.d-q.d),ms=new Set(l.map(t=>mk(t.d))).size,last=l[l.length-1],a0=-l[0].x,a1=-last.x,r3=l.slice(-3),mo=r3.reduce((s,t)=>s-t.x,0)/r3.length;
+    return{ok:g.rc||(ms>=6&&l.length/ms<=1.5&&now-last.d<=45*864e5),t:last,ms,mo,yr:l.reduce((s,t)=>s-t.x,0),up:a1>a0*1.02?a0:null,dn:a1<a0*.98?a0:null}})
+    .filter(o=>o.ok).sort((p,q)=>q.mo-p.mo)}
+function fxCard(){const l=fxList();if(!l.length)return"";const tm=l.reduce((s,o)=>s+o.mo,0),up=l.filter(o=>o.up!=null).length;
+  const lab=t=>esc(t.c?path(t.c):"no categoria")+(t.n?" ("+esc(t.n)+")":"");
+  return `<div class="card"><h2>Costi fissi (${l.length})</h2><p class="mut">Pagamenti che si ripetono quasi ogni mese negli ultimi 12 mesi (stesso conto, categoria e nota), ancora attivi, più le ricorrenze. Costo al mese = media degli ultimi 3 pagamenti.${up?" Aumentati rispetto a un anno fa: "+up+".":""}</p>
+  <div class="sum"><span>Totale al mese<small>circa ${eur(tm*12)} all’anno</small></span><b class="neg">${eur(tm)}</b></div>
+  ${l.map(o=>`<div class="row" onclick="edit('${o.t.i}')"><div class="m"><b>${lab(o.t)}</b><small>${esc(an(o.t.a))} · ${o.ms} mesi su 12 · ultimo ${dt(o.t.d)}${o.up!=null?` · <span class="neg">aumentato da ${eur(o.up)} a ${eur(-o.t.x)}</span>`:o.dn!=null?` · <span class="pos">sceso da ${eur(o.dn)} a ${eur(-o.t.x)}</span>`:""}</small></div><div class="r"><b>${eur(o.mo)}</b><small style="display:block" class="mut">${eur(o.yr)} in 12 mesi</small></div></div>`).join("")}</div>`}
 /* Spese straordinarie: restano nei saldi, escono dai report (R.xo). Suggerite: almeno 3 volte la mediana della categoria (o della principale) e non meno di 150 €; senza statistiche, da 1.000 € */
 let xoN=20;
-function xoSug(){const inc=new Set(S.A.filter(a=>a.tot).map(a=>a.i)),L=S.T.filter(t=>!t.b&&t.x<0&&inc.has(t.a));
-  const tk=t=>{const c=t.c&&topc(t.c);return c?c.i:"-"},Lf={},Lt={};
-  L.forEach(t=>{if(t.xo)return;(Lf[t.c||"-"]=Lf[t.c||"-"]||[]).push(-t.x);(Lt[tk(t)]=Lt[tk(t)]||[]).push(-t.x)});
+// Statistiche per spese ed entrate separate (chiave: segno + categoria). th: soglia "molto sopra il solito";
+// usual: nei 12 mesi prima ci sono altri 2 movimenti della stessa categoria e segno grandi almeno la metà, cioè un importo abituale (es. bollette, stipendio)
+function xoStats(){const inc=new Set(S.A.filter(a=>a.tot).map(a=>a.i)),L=S.T.filter(t=>!t.b&&t.x&&inc.has(t.a));
+  const sg=t=>t.x<0?"e":"i",tk=t=>{const c=t.c&&topc(t.c);return sg(t)+(c?c.i:"-")},fk=t=>sg(t)+(t.c||"-"),Lf={},Lt={},B={};
+  L.forEach(t=>{(B[fk(t)]=B[fk(t)]||[]).push(t);if(t.xo)return;(Lf[fk(t)]=Lf[fk(t)]||[]).push(Math.abs(t.x));(Lt[tk(t)]=Lt[tk(t)]||[]).push(Math.abs(t.x))});
   const mth=M=>{const o={};for(const k in M)if(M[k].length>=5){const a=M[k].sort((p,q)=>p-q);o[k]=Math.max(15000,3*a[a.length>>1])}return o},tf=mth(Lf),tt=mth(Lt);
-  const th=t=>tf[t.c||"-"]!=null?tf[t.c||"-"]:tt[tk(t)]!=null?tt[tk(t)]:100000;
-  return L.filter(t=>t.xo==null&&-t.x>th(t)).sort((p,q)=>p.x-q.x)}
-function xoCard(){const sg=xoSug(),mk=S.T.filter(t=>t.xo).sort((p,q)=>Math.abs(q.x)-Math.abs(p.x)),sm=l=>l.reduce((s,t)=>s+Math.abs(t.x),0);
+  const th=t=>tf[fk(t)]!=null?tf[fk(t)]:tt[tk(t)]!=null?tt[tk(t)]:100000;
+  const usual=t=>(B[fk(t)]||[]).filter(x=>x!==t&&x.d<t.d&&x.d>=t.d-365*864e5&&Math.abs(x.x)>=Math.abs(t.x)/2).length>=2;
+  return{L,th,usual}}
+function xoSug(){const{L,th,usual}=xoStats();return L.filter(t=>t.xo==null&&Math.abs(t.x)>th(t)&&!usual(t)).sort((p,q)=>Math.abs(q.x)-Math.abs(p.x))}
+function xoCard(){const sg=xoSug(),mk=S.T.filter(t=>t.xo).sort((p,q)=>Math.abs(q.x)-Math.abs(p.x)),sm=l=>{const e=l.reduce((s,t)=>s+(t.x<0?-t.x:0),0),i=l.reduce((s,t)=>s+(t.x>0?t.x:0),0);return [e?"spese "+eur(e):"",i?"entrate "+eur(i):""].filter(Boolean).join(" · ")},{usual}=xoStats();
+  const ui=t=>usual(t)?`<button class="b g ic" title="Importo abituale: nei 12 mesi prima ci sono almeno altri 2 movimenti della stessa categoria grandi almeno la metà. Forse non è straordinario" aria-label="Perché forse non è straordinario" onclick="toast(this.title)" style="color:var(--acc)">${ic("info")}</button>`:"";
   if(!sg.length&&!mk.length)return"";
   const it=(t,b)=>rows([t],1)+`<p style="display:flex;gap:10px;margin:2px 0 10px">${b}</p>`;
-  return `<div class="card"><h2>Spese straordinarie</h2><p class="mut">Le spese straordinarie restano nei saldi, ma escono dai report finché in Report è attivo il pulsante con il fulmine. Da valutare: spese molto sopra il solito per la loro categoria (almeno 3 volte la mediana e non meno di 150 €).</p>
-  ${sg.length?`<h2 style="font-size:15px;margin-top:14px">Da valutare (${sg.length} · ${eur(sm(sg))})</h2>`+sg.slice(0,xoN).map(t=>it(t,ib("xo","xoSet('"+t.i+"',1)","Segna come straordinaria","p")+ib("x","xoSet('"+t.i+"',0)","Non è straordinaria: togli dai suggerimenti"))).join("")+(sg.length>xoN?`<p>${ib("chd","xoN+=20;render()","Mostra altre")}</p>`:""):""}
-  ${mk.length?`<details style="margin-top:14px"><summary><b>Segnate (${mk.length} · ${eur(sm(mk))})</b></summary>${mk.map(t=>it(t,ib("x","xoSet('"+t.i+"')","Togli il segno di straordinaria"))).join("")}</details>`:""}</div>`}
-function xoSet(i,v){const t=S.T.find(x=>x.i===i);if(!t)return;if(v==null)delete t.xo;else t.xo=v;save();toast(v?"Segnata come straordinaria":v===0?"Tolta dai suggerimenti":"Segno tolto");render()}
+  return `<div class="card"><h2>Movimenti straordinari</h2><p class="mut">Spese ed entrate straordinarie restano nei saldi, ma escono dai report finché in Report è attivo il pulsante con il fulmine. Da valutare: movimenti molto sopra il solito per la loro categoria (almeno 3 volte la mediana e non meno di 150 €, spese ed entrate separate), esclusi gli importi che nei 12 mesi prima si erano già visti almeno 2 volte. Tra le segnate, la i indica quelle che questa regola considera abituali.</p>
+  ${sg.length?`<h2 style="font-size:15px;margin-top:14px">Da valutare (${sg.length} · ${sm(sg)})</h2>`+sg.slice(0,xoN).map(t=>it(t,ib("xo","xoSet('"+t.i+"',1)","Segna come straordinario","p")+ib("x","xoSet('"+t.i+"',0)","Non è straordinario: togli dai suggerimenti"))).join("")+(sg.length>xoN?`<p>${ib("chd","xoN+=20;render()","Mostra altri")}</p>`:""):""}
+  ${mk.length?`<details style="margin-top:14px"><summary><b>Segnati (${mk.length} · ${sm(mk)})${mk.some(usual)?" · "+mk.filter(usual).length+" con la i":""}</b></summary>${mk.filter(usual).concat(mk.filter(t=>!usual(t))).map(t=>it(t,ib("x","xoSet('"+t.i+"')","Togli il segno di straordinario")+ui(t))).join("")}</details>`:""}</div>`}
+function xoSet(i,v){const t=S.T.find(x=>x.i===i);if(!t)return;if(v==null)delete t.xo;else t.xo=v;save();toast(v?"Segnato come straordinario":v===0?"Tolto dai suggerimenti":"Segno tolto");render()}
 const appInfo=()=>cfg(APPV)?"Versione "+esc(APPV)+(cfg(BUILD)?" · build "+esc(BUILD):""):"Versione locale, non pubblicata";
 function th(v){if(v)document.documentElement.dataset.theme=v;else delete document.documentElement.dataset.theme;render()}
 function addC(){const n=$("#nc").value.trim();if(!n||addP===null)return;if(S.C.some(x=>(x.p||null)===(addP||null)&&x.n.toLowerCase()===n.toLowerCase())){toast("Esiste già");return}S.C.push({i:uid(),n,p:addP||null});if(!addP)aqr="";addP=null;save();render()}
