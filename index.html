@@ -326,8 +326,9 @@ function patr(sel){const set=new Set(sel?[sel]:S.A.filter(a=>a.tot&&a.on).map(a=
 // Patrimonio netto: conti inclusi nei totali meno il debito residuo stimato di mutui e prestiti
 const debt=()=>S.LN.reduce((s,L)=>s+lnCalc(L).D,0);
 // L.v: valore del bene comprato col mutuo (facoltativo, aggiornato a mano): entra nel patrimonio netto, non nel totale dei conti
+const lnOpen=()=>{tab="more";mGo("ln")};
 const assets=()=>S.LN.reduce((s,L)=>s+(L.v||0),0);
-function netRows(tot){const D=debt(),B=assets(),N=tot+B-D;return D>0||B>0?`${D>0?`<div class="sum"><span>Debiti residui<small>Mutui e prestiti, stima</small></span><b class="neg">${eur(-D)}</b></div>`:""}${B>0?`<div class="sum"><span>Beni<small>Valore indicato nei mutui</small></span><b>${eur(B)}</b></div>`:""}<div class="sum"><span>Patrimonio netto<small>${B>0?"Totale più beni meno debiti":"Totale meno debiti"}</small></span><b class="${N<0?"neg":"pos"}">${eur(N)}</b></div>`:""}
+function netRows(tot){const D=debt(),B=assets(),N=tot+B-D;return D>0||B>0?`${D>0?`<div class="sum" role="button" style="cursor:pointer" title="Apri Mutui e prestiti" onclick="lnOpen()"><span>Debiti residui<small>Mutui e prestiti, stima ›</small></span><b class="neg">${eur(-D)}</b></div>`:""}${B>0?`<div class="sum" role="button" style="cursor:pointer" title="Apri Mutui e prestiti" onclick="lnOpen()"><span>Beni<small>Valore indicato nei mutui ›</small></span><b>${eur(B)}</b></div>`:""}<div class="sum"><span>Patrimonio netto<small>${B>0?"Totale più beni meno debiti":"Totale meno debiti"}</small></span><b class="${N<0?"neg":"pos"}">${eur(N)}</b></div>`:""}
 // Proiezione a 12 mesi del totale: media mensile (entrate meno spese, trasferimenti verso conti fuori dai totali compresi) dei 12 mesi chiusi,
 // straordinari esclusi; dalla fine prevista di un mutuo la sua rata torna disponibile
 function proj(){const set=new Set(S.A.filter(a=>a.tot&&a.on).map(a=>a.i)),now=mk(Date.now()),m={};
