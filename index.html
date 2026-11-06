@@ -623,7 +623,7 @@ function amList(){const w=Date.now()-365*864e5,r={};S.T.forEach(t=>{if(t.d>w)[t.
 function amTog(i){amS.has(i)?amS.delete(i):amS.add(i);amList()}
 function amOk(){const l=[...amS];cbClose();F.a=l.length===1?l[0]:"";F.as=l.length>1?l:null;F.n=100;render()}
 /* Filtri rapidi di Movimenti, dentro un pannello che si apre con "Filtri": [chiave, etichetta, gruppo esclusivo, attivo?, imposta(on)] */
-let lfOpen=false,lvNew=false;
+let lfOpen=false,lvNew=false,lvOpen=false;
 const LQ=[["nc","senza categoria","",()=>!!(F.c&&F.c.length===1&&F.c[0]==="-"),on=>{F.c=on?["-"]:null;F.cl=on?"senza categoria":""}],
   ["nn","senza nota","n",()=>!!F.nn,on=>{F.nn=on}],["wn","con nota","n",()=>!!F.wn,on=>{F.wn=on}],
   ["ke","solo spese","k",()=>F.k==="e",on=>{F.k=on?"e":""}],["ki","solo entrate","k",()=>F.k==="i",on=>{F.k=on?"i":""}],
@@ -640,11 +640,14 @@ function lvPut(l){let c=S.P.find(x=>x.i==="lv");if(!c){c={i:"lv"};S.P.push(c)}c.
 function lvAdd(){const n=(($("#lv-n")||{}).value||"").trim();if(!n){toast("Scrivi un nome");return}lvNew=false;lvPut(lvList().concat({i:uid(),n,f:lvCur()}));toast("Vista salvata")}
 function lvGo(i){const v=lvList().find(x=>x.i===i);if(!v)return;LVK.forEach(k=>{F[k]=k in v.f?v.f[k]:(k==="c"||k==="as")?null:(k==="nn"||k==="wn"||k==="xo"||k==="ins")?false:""});F.ids=null;F.rep=false;F.n=100;render()}
 function lvDel(i){lvPut(lvList().filter(x=>x.i!==i));toast("Vista eliminata")}
+// riga: Filtri, Viste (n) e, se i filtri attuali sono una vista salvata, il suo nome; i due pannelli si aprono sotto
 function lfPanel(){const n=LQ.filter(x=>x[3]()).length,V=lvList(),on=V.find(lvSame);
-  return `<div class="cr" style="margin:8px 0 0;flex-wrap:wrap"><button class="b g${lfOpen?" on":""}" style="display:inline-flex;align-items:center;gap:6px${n?";border-color:var(--acc);color:var(--acc)":""}" aria-expanded="${lfOpen}" onclick="lfOpen=!lfOpen;render()">Filtri${n?" ("+n+")":""} ${ic(lfOpen?"chu":"chd",16)}</button>${V.map(v=>`<button class="b ${lvSame(v)?"p":"g"} chip" title="Vista salvata" onclick="lvGo('${v.i}')">${esc(v.n)}</button>`).join("")}</div>
+  const tg=(o,t,js,c)=>`<button class="b g" style="display:inline-flex;align-items:center;gap:6px${c?";border-color:var(--acc);color:var(--acc)":""}" aria-expanded="${o}" onclick="${js}">${t} ${ic(o?"chu":"chd",16)}</button>`;
+  return `<div class="cr" style="margin:8px 0 0;flex-wrap:wrap">${tg(lfOpen,"Filtri"+(n?" ("+n+")":""),"lfOpen=!lfOpen;render()",n)}${tg(lvOpen,"Viste"+(V.length?" ("+V.length+")":""),"lvOpen=!lvOpen;lvNew=false;render()",0)}${on?`<button class="b p chip" title="Vista salvata attiva: tocca per togliere i filtri" onclick="listGo()">${esc(on.n)} ${ic("x",14)}</button>`:(Object.keys(lvCur()).length||F.ids||F.rep)?`<button class="b g" style="display:inline-flex;align-items:center;gap:6px" title="Toglie ricerca, conti, date, categoria e filtri" onclick="listGo()">${ic("x",16)} Azzera</button>`:""}</div>
   ${lfOpen?`<div style="margin-top:8px"><div class="chips" style="flex-wrap:wrap">${LQ.map(([k,l,g,a])=>`<button class="b ${a()?"p":"g"} chip" aria-pressed="${a()}" onclick="lfT('${k}')">${l}</button>`).join("")}</div>
-    <label>Ordine</label><div class="chips" style="flex-wrap:wrap">${LO.map(([k,l])=>`<button class="b ${(F.o||"")===k?"p":"g"} chip" onclick="F.o='${k}';F.n=100;render()">${l}</button>`).join("")}</div>
-    <label>Viste</label><div class="cr" style="margin:0">${on?ib("trash","lvDel('"+on.i+"')","Elimina la vista "+esc(on.n),"d"):ib("plus","lvNew=!lvNew;render()","Salva questi filtri come vista")}<span class="mut" style="align-self:center">${on?"Vista «"+esc(on.n)+"»":"Salva i filtri attuali con un nome"}</span></div>
+    <label>Ordine</label><div class="chips" style="flex-wrap:wrap">${LO.map(([k,l])=>`<button class="b ${(F.o||"")===k?"p":"g"} chip" onclick="F.o='${k}';F.n=100;render()">${l}</button>`).join("")}</div></div>`:""}
+  ${lvOpen?`<div style="margin-top:8px">${V.length?`<div class="chips" style="flex-wrap:wrap">${V.map(v=>`<button class="b ${lvSame(v)?"p":"g"} chip" title="Vista salvata" onclick="lvGo('${v.i}')">${esc(v.n)}</button>`).join("")}</div>`:'<p class="mut" style="margin:0">Nessuna vista salvata.</p>'}
+    <div class="cr">${on?ib("trash","lvDel('"+on.i+"')","Elimina la vista "+esc(on.n),"d"):ib("plus","lvNew=!lvNew;render()","Salva questi filtri come vista")}<span class="mut" style="align-self:center">${on?"Vista «"+esc(on.n)+"»: il cestino la elimina":"Salva i filtri attuali con un nome"}</span></div>
     ${lvNew&&!on?`<div class="cr"><input id="lv-n" placeholder="Nome della vista, es. Da sistemare grossi" autocomplete="off" style="flex:1;min-width:0" onkeydown="if(event.key==='Enter')lvAdd()">${ib("check","lvAdd()","Salva","p")}${ib("x","lvNew=false;render()","Annulla")}</div>`:""}</div>`:""}`}
 /* Modifica multipla: msel = id selezionati (null = modalità spenta); mLast = ids dell'elenco filtrato; mDel = conferma eliminazione */
 let msel=null,mLast=[],mDel=false;
