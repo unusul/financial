@@ -295,11 +295,12 @@ function ctOpen(i){const r=RG[i];if(!r)return;CT={c:r.c,l:r.l};render();const e=
 function ctDraw(){const box=$("#rct");if(!box)return;if(!CT){box.style.display="none";return}box.style.display="";
   const set=new Set(CT.c),inc=hInc(),now=new Date(),ks=[];for(let k=23;k>=0;k--)ks.push(mk(new Date(now.getFullYear(),now.getMonth()-k,1).getTime()));
   const E={},I={};S.T.forEach(t=>{if(!hFlow(t)||!inc.has(t.a)||!set.has(t.c||"-"))return;const k=mk(t.d);if(t.x<0)E[k]=(E[k]||0)-t.x;else I[k]=(I[k]||0)+t.x});
-  const cl=ks.slice(0,23),avg=cl.reduce((s,k)=>s+(E[k]||0),0)/cl.length,hasI=ks.some(k=>I[k]);
-  box.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><h2 style="flex:1;margin:0">Andamento: ${esc(CT.l)}</h2>${ib("x","CT=null;render()","Chiudi")}</div><p class="mut">Ultimi 24 mesi${R.xo?", straordinari esclusi":""}. Media delle spese nei mesi chiusi: ${eur(avg)} al mese. Tocca una colonna per il report di quel mese.</p><div class="cv" style="height:220px"><canvas id="c6"></canvas></div>`;
+  // tipo prevalente della categoria (spese o entrate): su quello la media; le serie vuote non si disegnano
+  const cl=ks.slice(0,23),sE=ks.reduce((s,k)=>s+(E[k]||0),0),sI=ks.reduce((s,k)=>s+(I[k]||0),0),isI=sI>sE,M=isI?I:E,avg=cl.reduce((s,k)=>s+(M[k]||0),0)/cl.length,lab=isI?"entrate":"spese";
+  box.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><h2 style="flex:1;margin:0">Andamento: ${esc(CT.l)}</h2>${ib("x","CT=null;render()","Chiudi")}</div><p class="mut">Ultimi 24 mesi${R.xo?", straordinari esclusi":""}. Media delle ${lab} nei mesi chiusi: ${eur(avg)} al mese. Tocca una colonna per il report di quel mese.</p><div class="cv" style="height:220px"><canvas id="c6"></canvas></div>`;
   if(!window.Chart)return;const cs=getComputedStyle(document.documentElement),col=n=>cs.getPropertyValue(n).trim()||"#888";
-  const ds=[{type:"bar",label:"Spese",data:ks.map(k=>(E[k]||0)/100),backgroundColor:col("--out")}];if(hasI)ds.push({type:"bar",label:"Entrate",data:ks.map(k=>(I[k]||0)/100),backgroundColor:col("--in")});
-  ds.push({type:"line",label:"Media spese",data:ks.map(()=>avg/100),borderColor:col("--mut"),borderDash:[6,4],pointRadius:0,borderWidth:2,fill:false});
+  const ds=[];if(sE)ds.push({type:"bar",label:"Spese",data:ks.map(k=>(E[k]||0)/100),backgroundColor:col("--out")});if(sI)ds.push({type:"bar",label:"Entrate",data:ks.map(k=>(I[k]||0)/100),backgroundColor:col("--in")});
+  ds.push({type:"line",label:"Media "+lab,data:ks.map(()=>avg/100),borderColor:col("--mut"),borderDash:[6,4],pointRadius:0,borderWidth:2,fill:false});
   ch.push(new Chart($("#c6"),{data:{labels:ks.map(k=>k.slice(5)+"/"+k.slice(2,4)),datasets:ds},options:{maintainAspectRatio:false,color:col("--ink"),scales:{x:{ticks:{color:col("--mut"),maxTicksLimit:12}},y:{ticks:{color:col("--mut")},grid:{color:col("--line")}}},
     onHover:(e,el)=>{e.native.target.style.cursor=el.length?"pointer":"default"},onClick:(e,el)=>{if(!el.length)return;R.sc="m";R.m=ks[el[0].index];render();scrollTo(0,0)}}}))}
 function repGo(i){const r=RG[i];if(!r)return;F.c=r.c;F.cl=r.l;F.rep=true;F.ids=null;F.a="";F.q="";F.n=100;F.m=R.sc==="m"?R.m:"";F.y=R.sc==="y"?R.y:"";tab="list";render()}
