@@ -79,7 +79,13 @@ const eur=c=>PV?"••••":(c/100).toLocaleString("it-IT",{style:"currency",
 const dt=ms=>new Date(ms).toLocaleDateString("it-IT",{day:"2-digit",month:"short",year:"numeric"});
 const loc=ms=>{const d=new Date(ms-new Date(ms).getTimezoneOffset()*6e4);return d.toISOString().slice(0,16)};
 const uid=()=>"n"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-let toastT;function toast(m){const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(toastT);toastT=setTimeout(()=>t.style.display="none",Math.max(2400,String(m).length*55))}
+let toastT;/* Annulla: uSnap() prima di un'azione, uToast() dopo; ripristina tutto lo stato e rimarca come nuovi i movimenti rinati,
+   così una lapide già sincronizzata non li cancella di nuovo */
+let uS=null;
+function uSnap(){try{uS=JSON.stringify(S)}catch(e){uS=null}}
+function uToast(m){const t=$("#toast");if(!uS){toast(m);return}t.innerHTML=esc(m)+' <button class="b" style="margin-left:8px;padding:4px 10px;font-size:13px" onclick="uDo()">Annulla</button>';t.style.display="block";clearTimeout(toastT);toastT=setTimeout(()=>{t.style.display="none";uS=null},8000)}
+function uDo(){if(!uS)return;const r=JSON.parse(uS),now=Date.now();uS=null;for(const c of COLS)for(const x of (r[c]||[]))if(!((c+x.i) in sig))x.u=now;S=r;$("#toast").style.display="none";save();toast("Annullato");render()}
+function toast(m){const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(toastT);toastT=setTimeout(()=>t.style.display="none",Math.max(2400,String(m).length*55))}
 // ---- Sincronizzazione Google Drive (cartella nascosta dell'app) ----
 const APPV="__APPV__",BUILD="__BUILD__"; // versione (VERSIONE di sw.js) e build: inseriti alla pubblicazione
 const GID="__G_CLIENT__",GSC="https://www.googleapis.com/auth/drive.appdata",GF="cassetto-dati.json",GK="cassetto_gsync";
@@ -299,9 +305,9 @@ function tcDo(){const o=tpls(true).find(x=>x.k===tcv);if(!o||o.p)return;const n=
 function tcUndo(){const u=S.UN;if(!u)return;u.tx.forEach(r=>{const t=S.T.find(x=>x.i===r.i);if(t&&t.c===u.c){t.c=r.c;if(r.s===undefined)delete t.s;else t.s=r.s}});
   if(u.mk&&!S.T.some(t=>t.c===u.c)&&!S.C.some(c=>c.p===u.c))S.C=S.C.filter(c=>c.i!==u.c);S.UN=null;save();toast("Conversione annullata");render()}
 function tAct(k){if(k[0]==="p"){S.P=S.P.filter(o=>o.k!==k)}else{S.H=S.H||[];const i=S.H.indexOf(k);i<0?S.H.push(k):S.H.splice(i,1)}save();render()}
-function fchips(){const c=[];if(F.c)c.push(["c",F.cl||"Categoria"]);if(F.rep)c.push(["r","report"]);if(F.ids)c.push(["i",F.il||"Movimenti frequenti"]);if(F.nn)c.push(["nn","senza nota"]);if(F.wn)c.push(["wn","con nota"]);if(F.tr)c.push(["tr",F.tr==="no"?"senza trasferimenti":"solo trasferimenti"]);return c.length?`<div class="chips" style="margin-bottom:12px">${c.map(([k,n])=>`<button class="b g chip" title="Rimuovi filtro" aria-label="Rimuovi filtro ${esc(n)}" onclick="fclr('${k}')">${esc(n)} ${ic("x",16)}</button>`).join("")}</div>`:""}
-function tpGo(k){const o=tpls(true).find(x=>x.k===k);if(!o||o.p)return;F.ids=new Set(tcMatch(o,1).map(t=>t.i));F.nn=false;F.wn=false;F.tr="";F.il=(o.kd==="t"?an(o.a)+" → "+an(o.b):path(o.c).split(" › ").pop())+" · "+eur(Math.abs(o.x));F.a="";F.m="";F.y="";F.q="";F.c=null;F.cl="";F.rep=false;F.n=100;tab="list";render()}
-function fclr(k){if(k==="c"){F.c=null;F.cl=""}if(k==="y")F.y="";if(k==="r")F.rep=false;if(k==="i"){F.ids=null;F.il=""}if(k==="nn")F.nn=false;if(k==="wn")F.wn=false;if(k==="tr")F.tr="";render()}
+function fchips(){const c=[];if(F.c)c.push(["c",F.cl||"Categoria"]);if(F.rep)c.push(["r","report"]);if(F.ids)c.push(["i",F.il||"Movimenti frequenti"]);if(F.as)c.push(["as",F.as.map(an).join(", ")]);if(F.nn)c.push(["nn","senza nota"]);if(F.wn)c.push(["wn","con nota"]);if(F.tr)c.push(["tr",F.tr==="no"?"senza trasferimenti":"solo trasferimenti"]);if(F.k)c.push(["k",F.k==="e"?"solo spese":"solo entrate"]);if(F.xo)c.push(["xo","solo straordinari"]);if(F.ins)c.push(["ins","inseriti qui"]);return c.length?`<div class="chips" style="margin-bottom:12px">${c.map(([k,n])=>`<button class="b g chip" title="Rimuovi filtro" aria-label="Rimuovi filtro ${esc(n)}" onclick="fclr('${k}')">${esc(n)} ${ic("x",16)}</button>`).join("")}</div>`:""}
+function tpGo(k){const o=tpls(true).find(x=>x.k===k);if(!o||o.p)return;F.ids=new Set(tcMatch(o,1).map(t=>t.i));F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.il=(o.kd==="t"?an(o.a)+" → "+an(o.b):path(o.c).split(" › ").pop())+" · "+eur(Math.abs(o.x));F.a="";F.m="";F.y="";F.q="";F.c=null;F.cl="";F.rep=false;F.n=100;tab="list";render()}
+function fclr(k){if(k==="c"){F.c=null;F.cl=""}if(k==="y")F.y="";if(k==="r")F.rep=false;if(k==="i"){F.ids=null;F.il=""}if(k==="as")F.as=null;if(k==="nn")F.nn=false;if(k==="wn")F.wn=false;if(k==="tr")F.tr="";if(k==="k")F.k="";if(k==="xo")F.xo=false;if(k==="ins")F.ins=false;render()}
 /* Andamento di una categoria: spese ed entrate mese per mese degli ultimi 24 mesi (stessi movimenti del Report), con la media dei mesi chiusi */
 let CT=null;
 function ctOpen(i){const r=RG[i];if(!r)return;CT={c:r.c,l:r.l};render();const e=$("#rct");if(e)e.scrollIntoView({behavior:"smooth",block:"start"})}
@@ -316,7 +322,7 @@ function ctDraw(){const box=$("#rct");if(!box)return;if(!CT){box.style.display="
   ds.push({type:"line",label:"Media "+lab,data:ks.map(()=>avg/100),borderColor:col("--mut"),borderDash:[6,4],pointRadius:0,borderWidth:2,fill:false});
   ch.push(new Chart($("#c6"),{data:{labels:ks.map(k=>k.slice(5)+"/"+k.slice(2,4)),datasets:ds},options:{maintainAspectRatio:false,color:col("--ink"),scales:{x:{ticks:{color:col("--mut"),maxTicksLimit:12}},y:{ticks:{color:col("--mut")},grid:{color:col("--line")}}},
     onHover:(e,el)=>{e.native.target.style.cursor=el.length?"pointer":"default"},onClick:(e,el)=>{if(!el.length)return;R.sc="m";R.m=ks[el[0].index];render();scrollTo(0,0)}}}))}
-function repGo(i){const r=RG[i];if(!r)return;F.c=r.c;F.cl=r.l;F.rep=true;F.ids=null;F.nn=false;F.wn=false;F.tr="";F.a="";F.q="";F.n=100;F.m=R.sc==="m"?R.m:"";F.y=R.sc==="y"?R.y:"";tab="list";render()}
+function repGo(i){const r=RG[i];if(!r)return;F.c=r.c;F.cl=r.l;F.rep=true;F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.a="";F.q="";F.n=100;F.m=R.sc==="m"?R.m:"";F.y=R.sc==="y"?R.y:"";tab="list";render()}
 const mk=d=>loc(d).slice(0,7);
 const msh=k=>new Date(+k.slice(0,4),+k.slice(5)-1,1).toLocaleDateString("it-IT",{month:"short",year:"2-digit"});
 const ml=k=>new Date(+k.slice(0,4),+k.slice(5)-1,1).toLocaleDateString("it-IT",{month:"long",year:"numeric"});
@@ -498,7 +504,7 @@ function qAmt(q){const n=x=>{const v=pn(x);return isNaN(v)?null:Math.round(v*100
   if((m=q.match(/^\s*([\d.,]+)\s*-\s*([\d.,]+)\s*$/))){const a=n(m[1]),b=n(m[2]);return a==null||b==null?null:x=>x>=Math.min(a,b)&&x<=Math.max(a,b)}
   if(/^\s*[\d.,]+\s*€?\s*$/.test(q)&&/\d/.test(q)){const v=n(q.replace("€",""));return v==null?null:a=>a===v}return null}
 function qMatch(t,q){const f=qAmt(q),a=Math.abs(t.b?t.y||t.x:t.x);return f?f(a):(t.n||"").toLowerCase().includes(q)}
-function listGo(){F.q="";F.a="";F.m="";F.y="";F.c=null;F.cl="";F.ids=null;F.nn=false;F.wn=false;F.tr="";F.rep=false;F.n=100;editId=null;go("list")}
+function listGo(){F.q="";F.a="";F.m="";F.y="";F.c=null;F.cl="";F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.rep=false;F.n=100;editId=null;go("list")}
 const hHead=(t,js,tt)=>`<h2 style="cursor:pointer" role="button" title="${tt}" onclick="${js}">${t} <span class="mut">›</span></h2>`;
 const HBK={
   acc:()=>{const l=sortedAcc(),ld={};S.T.forEach(t=>{if(!ld[t.a]||t.d>ld[t.a])ld[t.a]=t.d;if(t.b&&(!ld[t.b]||t.d>ld[t.b]))ld[t.b]=t.d});
@@ -544,7 +550,7 @@ function vHome(){const{o,h,r}=hCfg(),last=o.length-1;
   <div class="hg">${o.map(blk).join("")}</div>
   ${gOn()?`<div class="card" style="display:flex;align-items:center;gap:10px"><span class="mut" id="sy2" style="flex:1">${esc(gMsg||gName()+" collegato")}</span>${ib(gIc(),"gSync(false)","Sincronizza ora")}</div>`:""}`;
 }
-function goAcc(i){F.a=i;F.m="";F.y="";F.q="";F.c=null;F.cl="";F.ids=null;F.nn=false;F.wn=false;F.tr="";F.rep=false;F.n=100;tab="list";render()}
+function goAcc(i){F.a=i;F.as=null;F.m="";F.y="";F.q="";F.c=null;F.cl="";F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.rep=false;F.n=100;tab="list";render()}
 
 /* ---------- Aggiungi / modifica ---------- */
 let xoF=false,ek="e",catTouched=false,pre=null,tpMore=false,tpAll=false,tpK="e",accTouched=false,mgSrc=null,mvSrc=null,catAct=null,rcSrc=null,PT={a:"",r:"12"};
@@ -587,9 +593,9 @@ function saveTx(nw){
   const o={i:editId||uid(),d:d0,a,b,c:$("#f-c").value||null,x:ek==="i"?c:-c,y:ek==="t"?c:0,n:$("#f-n").value.trim(),s:"a",ins:editId?(S.T.find(x=>x.i===editId)||{}).ins:Date.now(),cl:editId?(S.T.find(x=>x.i===editId)||{}).cl:undefined,xo:xoF?1:editId&&(S.T.find(x=>x.i===editId)||{}).xo===0?0:undefined}; // xo: 1 straordinaria, 0 scartata dai suggerimenti
   if(!editId&&rcPend){const r=S.RC.find(x=>x.i===rcPend);if(r){o.rc=r.i;r.next=nxt(r)}}rcPend=null;
   if(editId){S.T[S.T.findIndex(x=>x.i===editId)]=o}else S.T.push(o);
-  S.L={a,c:o.c};editId=null;if(nw){save();toast("Salvato");render();return}F.a=a;F.m=loc(o.d).slice(0,7);F.q="";F.n=100;F.c=null;F.y="";F.rep=false;F.ids=null;F.nn=false;F.wn=false;F.tr="";tab="list";save();toast("Salvato");render();
+  S.L={a,c:o.c};editId=null;if(nw){save();toast("Salvato");render();return}F.a=a;F.m=loc(o.d).slice(0,7);F.q="";F.n=100;F.c=null;F.y="";F.rep=false;F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;tab="list";save();toast("Salvato");render();
 }
-function delTx(){S.T=S.T.filter(x=>x.i!==editId);S.D.push(editId);editId=null;tab="list";save();toast("Eliminato");render()}
+function delTx(){uSnap();S.T=S.T.filter(x=>x.i!==editId);S.D.push(editId);editId=null;tab="list";save();uToast("Eliminato");render()}
 function edit(i){editId=i;tab="add";render()}
 function rows(l,sa,fa){return l.map(t=>{const k=kind(t),cn=t.c?path(t.c):"",an=(acc(t.a)||{}).n||"?";
   const sub=k==="t"?`${esc(an)} → ${esc((acc(t.b)||{}).n||"?")}${cn?" › "+esc(cn):""}`:`${sa?esc(an)+" › ":""}${cn?esc(cn):"no categoria"}`;
@@ -606,18 +612,52 @@ function mpick(id,v,st){v=v||loc(Date.now()).slice(0,7);
   return `<span id="${id}" style="display:flex;gap:10px;${st||""}"><select aria-label="Mese" style="flex:1;min-width:0">${MN.map((n,i)=>`<option value="${String(i+1).padStart(2,"0")}"${+m===i+1?" selected":""}>${n}</option>`).join("")}</select><select aria-label="Anno" style="flex:1;min-width:0">${ys.map(a=>`<option${a===y?" selected":""}>${a}</option>`).join("")}</select></span>`}
 const mval=id=>{const e=$("#"+id);if(e.tagName==="INPUT")return e.value;const q=e.querySelectorAll("select");return q[1].value+"-"+q[0].value};
 let sumOpen=false;
+/* Scelta di più conti in Movimenti: pannello #cbm con caselle; amS = scelta in corso */
+let amS=new Set();
+function amLab(){const l=F.as||(F.a?[F.a]:[]);return !l.length?"tutti i conti":l.length<=2?esc(l.map(an).join(", ")):l.length+" conti"}
+function amOpen(){amS=new Set(F.as||(F.a?[F.a]:[]));let m=$("#cbm");if(!m){m=document.createElement("div");m.id="cbm";document.body.appendChild(m)}cbId="am";
+  m.innerHTML=`<div class="cbk" onclick="cbClose()"></div><div class="card cbs"><div class="cr" style="margin:0;align-items:center"><b style="flex:1">Conti</b>${ib("x","cbClose()","Chiudi")}</div><div id="cbl"></div><div class="cr" style="margin:0">${ib("x","amS=new Set();amList()","Nessuno: tutti i conti")}<button class="b p" style="flex:1" onclick="amOk()">Applica</button></div></div>`;m.style.display="block";amList()}
+function amList(){const w=Date.now()-365*864e5,r={};S.T.forEach(t=>{if(t.d>w)[t.a,t.b].forEach(i=>{if(i)r[i]=(r[i]||0)+1})});
+  const L=S.A.slice().sort((p,q)=>(q.on?1:0)-(p.on?1:0)||(r[q.i]||0)-(r[p.i]||0)||p.n.localeCompare(q.n,"it"));
+  $("#cbl").innerHTML=L.map(a=>{const on=amS.has(a.i);return `<button class="b g cs${on?" on":""}" style="display:flex;align-items:center;gap:10px" aria-pressed="${on}" onclick="amTog('${a.i}')"><span style="flex:none;width:20px;height:20px;border-radius:5px;border:2px solid ${on?"var(--acc)":"var(--line)"};background:${on?"var(--acc)":"none"};display:inline-flex;align-items:center;justify-content:center;color:var(--acc-ink)">${on?ic("check",12):""}</span><span>${esc(a.n)}${a.on?"":' <small class="mut">(archiviato)</small>'}</span></button>`}).join("")}
+function amTog(i){amS.has(i)?amS.delete(i):amS.add(i);amList()}
+function amOk(){const l=[...amS];cbClose();F.a=l.length===1?l[0]:"";F.as=l.length>1?l:null;F.n=100;render()}
+/* Filtri rapidi di Movimenti, dentro un pannello che si apre con "Filtri": [chiave, etichetta, gruppo esclusivo, attivo?, imposta(on)] */
+let lfOpen=false,lvNew=false;
+const LQ=[["nc","senza categoria","",()=>!!(F.c&&F.c.length===1&&F.c[0]==="-"),on=>{F.c=on?["-"]:null;F.cl=on?"senza categoria":""}],
+  ["nn","senza nota","n",()=>!!F.nn,on=>{F.nn=on}],["wn","con nota","n",()=>!!F.wn,on=>{F.wn=on}],
+  ["ke","solo spese","k",()=>F.k==="e",on=>{F.k=on?"e":""}],["ki","solo entrate","k",()=>F.k==="i",on=>{F.k=on?"i":""}],
+  ["tno","senza trasferimenti","k",()=>F.tr==="no",on=>{F.tr=on?"no":""}],["tsi","solo trasferimenti","k",()=>F.tr==="si",on=>{F.tr=on?"si":""}],
+  ["xo","solo straordinari","",()=>!!F.xo,on=>{F.xo=on}],["ins","inseriti qui","",()=>!!F.ins,on=>{F.ins=on}]];
+function lfT(k){const q=LQ.find(x=>x[0]===k);if(!q)return;const was=q[3]();if(q[2])LQ.filter(x=>x[2]===q[2]).forEach(x=>x[4](false));q[4](!was);F.n=100;render()}
+const LO=[["","più recenti"],["gd","importo più grande"],["ga","importo più piccolo"]];
+// viste salvate di Movimenti: S.P id "lv", l = [{i,n,f}]
+const LVK=["q","a","as","m","y","c","cl","nn","wn","tr","k","xo","ins","o"];
+const lvList=()=>(S.P.find(x=>x.i==="lv")||{l:[]}).l||[];
+function lvCur(){const o={};LVK.forEach(k=>{const v=F[k];if(v!=null&&v!==""&&v!==false&&!(Array.isArray(v)&&!v.length))o[k]=v});return o}
+const lvSame=v=>JSON.stringify(lvCur())===JSON.stringify(v.f);
+function lvPut(l){let c=S.P.find(x=>x.i==="lv");if(!c){c={i:"lv"};S.P.push(c)}c.l=l;save();render()}
+function lvAdd(){const n=(($("#lv-n")||{}).value||"").trim();if(!n){toast("Scrivi un nome");return}lvNew=false;lvPut(lvList().concat({i:uid(),n,f:lvCur()}));toast("Vista salvata")}
+function lvGo(i){const v=lvList().find(x=>x.i===i);if(!v)return;LVK.forEach(k=>{F[k]=k in v.f?v.f[k]:(k==="c"||k==="as")?null:(k==="nn"||k==="wn"||k==="xo"||k==="ins")?false:""});F.ids=null;F.rep=false;F.n=100;render()}
+function lvDel(i){lvPut(lvList().filter(x=>x.i!==i));toast("Vista eliminata")}
+function lfPanel(){const n=LQ.filter(x=>x[3]()).length,V=lvList(),on=V.find(lvSame);
+  return `<div class="cr" style="margin:8px 0 0;flex-wrap:wrap"><button class="b g${lfOpen?" on":""}" style="display:inline-flex;align-items:center;gap:6px${n?";border-color:var(--acc);color:var(--acc)":""}" aria-expanded="${lfOpen}" onclick="lfOpen=!lfOpen;render()">Filtri${n?" ("+n+")":""} ${ic(lfOpen?"chu":"chd",16)}</button>${V.map(v=>`<button class="b ${lvSame(v)?"p":"g"} chip" title="Vista salvata" onclick="lvGo('${v.i}')">${esc(v.n)}</button>`).join("")}</div>
+  ${lfOpen?`<div style="margin-top:8px"><div class="chips" style="flex-wrap:wrap">${LQ.map(([k,l,g,a])=>`<button class="b ${a()?"p":"g"} chip" aria-pressed="${a()}" onclick="lfT('${k}')">${l}</button>`).join("")}</div>
+    <label>Ordine</label><div class="chips" style="flex-wrap:wrap">${LO.map(([k,l])=>`<button class="b ${(F.o||"")===k?"p":"g"} chip" onclick="F.o='${k}';F.n=100;render()">${l}</button>`).join("")}</div>
+    <label>Viste</label><div class="cr" style="margin:0">${on?ib("trash","lvDel('"+on.i+"')","Elimina la vista "+esc(on.n),"d"):ib("plus","lvNew=!lvNew;render()","Salva questi filtri come vista")}<span class="mut" style="align-self:center">${on?"Vista «"+esc(on.n)+"»":"Salva i filtri attuali con un nome"}</span></div>
+    ${lvNew&&!on?`<div class="cr"><input id="lv-n" placeholder="Nome della vista, es. Da sistemare grossi" autocomplete="off" style="flex:1;min-width:0" onkeydown="if(event.key==='Enter')lvAdd()">${ib("check","lvAdd()","Salva","p")}${ib("x","lvNew=false;render()","Annulla")}</div>`:""}</div>`:""}`}
 /* Modifica multipla: msel = id selezionati (null = modalità spenta); mLast = ids dell'elenco filtrato; mDel = conferma eliminazione */
 let msel=null,mLast=[],mDel=false;
 function mMode(){msel=msel?null:new Set();mDel=false;lrows()}
 function mTog(i){msel.has(i)?msel.delete(i):msel.add(i);mDel=false;lrows()}
 function mAll(on){msel=on?new Set(mLast):new Set();mDel=false;lrows()}
 const mSel=()=>S.T.filter(t=>msel&&msel.has(t.i));
-function mDone(m){S.T.forEach(t=>{if(msel.has(t.i)&&t.s==="f")t.s="a"});save();toast(m);mDel=false;lrows()}
-function mCat(c){const l=mSel();if(!l.length||(c&&!cm[c]))return;l.forEach(t=>{t.c=c||null});mDone(l.length+(l.length===1?" movimento: ":" movimenti: ")+(c?path(c):"senza categoria"))}
-function mNote(){const l=mSel(),v=(($("#mn")||{}).value||"").trim();if(!l.length)return;l.forEach(t=>{t.n=v});mDone(l.length+(l.length===1?" movimento: ":" movimenti: ")+(v?"nota «"+v+"»":"nota tolta"))}
-function mXo(){const l=mSel().filter(t=>!t.b);if(!l.length){toast("I trasferimenti non possono essere straordinari");return}const on=!l.every(t=>t.xo);l.forEach(t=>{if(on)t.xo=1;else delete t.xo});mDone(l.length+(on?" segnati come straordinari":" tolti dagli straordinari"))}
+function mDone(m){S.T.forEach(t=>{if(msel.has(t.i)&&t.s==="f")t.s="a"});save();uToast(m);mDel=false;lrows()}
+function mCat(c){const l=mSel();if(!l.length||(c&&!cm[c]))return;uSnap();l.forEach(t=>{t.c=c||null});mDone(l.length+(l.length===1?" movimento: ":" movimenti: ")+(c?path(c):"senza categoria"))}
+function mNote(){const l=mSel(),v=(($("#mn")||{}).value||"").trim();if(!l.length)return;uSnap();l.forEach(t=>{t.n=v});mDone(l.length+(l.length===1?" movimento: ":" movimenti: ")+(v?"nota «"+v+"»":"nota tolta"))}
+function mXo(){const l=mSel().filter(t=>!t.b);if(!l.length){toast("I trasferimenti non possono essere straordinari");return}const on=!l.every(t=>t.xo);uSnap();l.forEach(t=>{if(on)t.xo=1;else delete t.xo});mDone(l.length+(on?" segnati come straordinari":" tolti dagli straordinari"))}
 function mDelDo(){const l=mSel();if(!l.length)return;if(!mDel){mDel=true;lrows();toast("Tocca di nuovo il cestino per eliminare "+l.length+(l.length===1?" movimento":" movimenti"));return}
-  const ids=new Set(l.map(t=>t.i));S.T=S.T.filter(t=>!ids.has(t.i));ids.forEach(i=>S.D.push(i));msel=new Set();mDel=false;save();toast(ids.size+(ids.size===1?" movimento eliminato":" movimenti eliminati"));lrows()}
+  uSnap();const ids=new Set(l.map(t=>t.i));S.T=S.T.filter(t=>!ids.has(t.i));ids.forEach(i=>S.D.push(i));msel=new Set();mDel=false;save();uToast(ids.size+(ids.size===1?" movimento eliminato":" movimenti eliminati"));lrows()}
 function mBar(){const n=msel.size,l=mSel(),xoOn=l.length&&l.filter(t=>!t.b).every(t=>t.xo);
   return `<div class="card" style="position:sticky;top:0;z-index:5;margin:0 0 12px;border-color:var(--acc)"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="flex:1">${n} selezionati</b>${ib("checkplus","mAll(true)","Seleziona tutti i "+mLast.length+" dell’elenco")}${ib("x","mAll(false)","Deseleziona tutti")}${ib("check","mMode()","Fine","p")}</div>
   ${n?`<label>Categoria</label>${cbS("mc",`<option value="">senza categoria</option>`+S.C.filter(c=>!c.ar).map(c=>[c.i,path(c.i)]).sort((a,b)=>a[1].localeCompare(b[1],"it")).map(([i,p])=>`<option value="${i}">${esc(p)}</option>`).join(""),'onchange="mCat(this.value)"',"cambia la categoria…")}
@@ -628,11 +668,10 @@ P.info='<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>';
 let F={q:"",a:"",m:loc(Date.now()).slice(0,7),n:100};
 function vList(){
   const yrs=[...new Set(S.T.map(t=>loc(t.d).slice(0,4)))].sort().reverse(),pm=F.m?"m":F.y?"y":"t",fx="flex:1;min-width:0";
-  $("#v").innerHTML=`<h1>${F.a?esc(an(F.a)):"Movimenti"}</h1>${F.a?`<p class="mut" style="margin:-6px 0 12px">Saldo <b class="${bal(F.a)<0?"neg":""}">${eur(bal(F.a))}</b></p>`:""}${fchips()}<div class="card"><label style="margin-top:0">Cerca</label><input id="q" value="${esc(F.q)}" placeholder="categoria, nota o importo (25,90 · >100 · 50-80)" autocomplete="off"><div id="qs"></div>${!(F.c&&F.c.length===1&&F.c[0]==="-")||!(F.nn||F.wn)||!F.tr?`<div class="chips" style="margin-top:8px">${F.c&&F.c.length===1&&F.c[0]==="-"?"":`<button class="b g chip" title="Mostra solo i movimenti senza categoria" onclick="F.c=['-'];F.cl='senza categoria';F.n=100;render()">senza categoria</button>`}${F.nn||F.wn?"":`<button class="b g chip" title="Mostra solo i movimenti senza nota" onclick="F.nn=true;F.n=100;render()">senza nota</button><button class="b g chip" title="Mostra solo i movimenti con una nota" onclick="F.wn=true;F.n=100;render()">con nota</button>`}${F.tr?"":`<button class="b g chip" title="Nasconde i trasferimenti tra i tuoi conti" onclick="F.tr='no';F.n=100;render()">senza trasferimenti</button><button class="b g chip" title="Mostra solo i trasferimenti tra i tuoi conti" onclick="F.tr='si';F.n=100;render()">solo trasferimenti</button>`}</div>`:""}
+  $("#v").innerHTML=`<h1>${F.a?esc(an(F.a)):"Movimenti"}</h1>${F.a?`<p class="mut" style="margin:-6px 0 12px">Saldo <b class="${bal(F.a)<0?"neg":""}">${eur(bal(F.a))}</b></p>`:""}${fchips()}<div class="card"><label style="margin-top:0">Cerca</label><input id="q" value="${esc(F.q)}" placeholder="categoria, nota o importo (25,90 · >100 · 50-80)" autocomplete="off"><div id="qs"></div>${lfPanel()}
   <label>Data</label><div style="display:flex;gap:10px"><select id="fp" style="${fx}">${[["t","tutto"],["m","mese"],["y","anno"]].map(([k,n])=>`<option value="${k}"${pm===k?" selected":""}>${n}</option>`).join("")}</select>${pm==="m"?`${mpick("m",F.m,fx)}`:pm==="y"?`<select id="fy" style="${fx}">${yrs.map(y=>`<option${y===F.y?" selected":""}>${y}</option>`).join("")}</select>`:""}</div>
-  <label>Conto</label><select id="fa">${accOpts(F.a,1)}</select></div><div class="card" id="lr"></div>`;
+  <label>Conto</label><button type="button" class="b g cbb" onclick="amOpen()"><span>${amLab()}</span>${ic("chd",16)}</button></div><div class="card" id="lr"></div>`;
   $("#q").oninput=()=>{F.q=$("#q").value;F.n=100;qsRun();lrows()};
-  $("#fa").oninput=()=>{F.a=$("#fa").value;F.n=100;lrows()};
   $("#fp").onchange=e=>{const v=e.target.value,now=loc(Date.now());F.m=v==="m"?(F.m||now.slice(0,7)):"";F.y=v==="y"?(F.y||yrs[0]||now.slice(0,4)):"";F.n=100;render()};
   if($("#m"))$("#m").onchange=()=>{F.m=mval("m");F.n=100;lrows()};
   if($("#fy"))$("#fy").onchange=e=>{F.y=e.target.value;F.n=100;lrows()};
@@ -646,12 +685,15 @@ function fcPick(id){F.c=S.C.filter(c=>{let y=c;while(y){if(y.i===id)return true;
 
 function lrows(){
   const q=F.q.toLowerCase();
-  const l=S.T.filter(t=>(!F.a||t.a===F.a||t.b===F.a)&&(!F.m||loc(t.d).slice(0,7)===F.m)&&(!F.y||loc(t.d).slice(0,4)===F.y)&&(!F.c||F.c.includes(t.c||"-"))&&(!F.rep||(!t.b&&(acc(t.a)||{}).tot))&&(!F.ids||F.ids.has(t.i))&&(!F.nn||!(t.n||"").trim())&&(!F.wn||!!(t.n||"").trim())&&(!F.tr||(F.tr==="no"?!t.b:!!t.b))&&(!q||qMatch(t,q))).sort((a,b)=>b.d-a.d);
+  const l=S.T.filter(t=>(!F.a||t.a===F.a||t.b===F.a)&&(!F.as||F.as.includes(t.a)||F.as.includes(t.b))&&(!F.m||loc(t.d).slice(0,7)===F.m)&&(!F.y||loc(t.d).slice(0,4)===F.y)&&(!F.c||F.c.includes(t.c||"-"))&&(!F.rep||(!t.b&&(acc(t.a)||{}).tot))&&(!F.ids||F.ids.has(t.i))&&(!F.nn||!(t.n||"").trim())&&(!F.wn||!!(t.n||"").trim())&&(!F.tr||(F.tr==="no"?!t.b:!!t.b))&&(!F.k||(!t.b&&(F.k==="e"?t.x<0:t.x>0)))&&(!F.xo||t.xo)&&(!F.ins||t.s==="a")&&(!q||qMatch(t,q))).sort(F.o?((a,b)=>{const v=t=>Math.abs(t.b?t.y||t.x:t.x);return F.o==="gd"?v(b)-v(a):v(a)-v(b)}):(a,b)=>b.d-a.d);
   mLast=l.map(t=>t.i);if(msel)msel.forEach(i=>{if(!S.T.some(t=>t.i===i))msel.delete(i)});
+  const flt=!!(F.q||F.a||F.as||F.c||F.ids||F.nn||F.wn||F.tr||F.k||F.xo||F.ins),G={};
+  if(flt)l.forEach(t=>{const k=t.b?"~t":t.c||"-",g=G[k]||(G[k]={k,n:t.b?"trasferimenti":t.c?path(t.c):"no categoria",v:0,c:0});g.c++;g.v+=t.b?Math.abs(t.y||t.x):t.x});
+  const GL=Object.values(G).sort((a,b)=>Math.abs(b.v)-Math.abs(a.v)),rcat=GL.length>1?`<details style="margin:4px 0 8px"><summary class="mut" style="font-size:14px">Per categoria (${GL.length}) ${ic("chd",14)}</summary>${GL.slice(0,15).map(g=>`<div class="sum"${g.k!=="~t"?` role="button" style="cursor:pointer" title="Filtra su questa categoria" onclick="F.c=['${g.k}'];F.cl=${g.k==="-"?"'senza categoria'":"path('"+g.k+"')"};F.n=100;render()"`:""}><span>${esc(g.n)}<small>${g.c} movimenti</small></span><b class="${g.k==="~t"?"":g.v<0?"neg":"pos"}">${eur(g.v)}</b></div>`).join("")}${GL.length>15?`<p class="mut" style="margin:6px 0 0">e altre ${GL.length-15}</p>`:""}</details>`:"";
   const se=l.reduce((s,t)=>s+(!t.b&&t.x<0?t.x:0),0),si=l.reduce((s,t)=>s+(!t.b&&t.x>0?t.x:0),0);
   const fa=F.a,ht=!!fa&&l.some(t=>t.b),tr=ht?l.reduce((s,t)=>s+(t.b?(t.a===fa?-Math.abs(t.x):t.b===fa?Math.abs(t.y):0):0),0):0,vr=se+si+tr;
   const tp=(c,v,t)=>`<b class="${c}" title="${t}" onclick="toast(this.title)" style="cursor:help">${eur(v)}</b>`;
-  $("#lr").innerHTML=(msel?mBar():"")+`<div class="sum" style="flex-wrap:wrap"><span class="mut" style="display:flex;align-items:center;gap:6px">${l.length} movimenti${msel?"":ib("checkplus","mMode()","Seleziona più movimenti")}<button class="b g ic sm" title="${sumOpen?'Nascondi il calcolo':'Mostra il calcolo'}" aria-label="${sumOpen?'Nascondi il calcolo':'Mostra il calcolo'}" aria-expanded="${sumOpen}"${sumOpen?' style="color:var(--acc);border-color:var(--acc)"':""} onclick="sumTog()">${ic("info",18)}</button></span>${sumOpen?`<span style="text-align:right;margin-left:auto">${tp("neg",se,"Spese: somma dei movimenti in uscita, esclusi i trasferimenti")} + ${tp("pos",si,"Entrate: somma dei movimenti in entrata, esclusi i trasferimenti")}${ht?` ${tr<0?"−":"+"} ${tp(tr<0?"neg":tr>0?"pos":"",Math.abs(tr),"Trasferimenti: soldi arrivati in questo conto meno soldi usciti verso i tuoi altri conti")}`:""} = ${tp(vr<0?"neg":"pos",vr,ht||fa?"Variazione del saldo del conto nel periodo: spese + entrate ± trasferimenti":"Differenza tra entrate e spese (i trasferimenti tra i tuoi conti si annullano)")}</span>`:""}</div>`+rows(l.slice(0,F.n),!F.a,F.a)+(l.length>F.n?`<p>${ib("chd","F.n+=200;lrows()","Mostra altri")}</p>`:"")||'<p class="mut">Nessun risultato.</p>';
+  $("#lr").innerHTML=(msel?mBar():"")+`<div class="sum" style="flex-wrap:wrap"><span class="mut" style="display:flex;align-items:center;gap:6px">${l.length} movimenti${msel?"":ib("checkplus","mMode()","Seleziona più movimenti")}<button class="b g ic sm" title="${sumOpen?'Nascondi il calcolo':'Mostra il calcolo'}" aria-label="${sumOpen?'Nascondi il calcolo':'Mostra il calcolo'}" aria-expanded="${sumOpen}"${sumOpen?' style="color:var(--acc);border-color:var(--acc)"':""} onclick="sumTog()">${ic("info",18)}</button></span>${sumOpen?`<span style="text-align:right;margin-left:auto">${tp("neg",se,"Spese: somma dei movimenti in uscita, esclusi i trasferimenti")} + ${tp("pos",si,"Entrate: somma dei movimenti in entrata, esclusi i trasferimenti")}${ht?` ${tr<0?"−":"+"} ${tp(tr<0?"neg":tr>0?"pos":"",Math.abs(tr),"Trasferimenti: soldi arrivati in questo conto meno soldi usciti verso i tuoi altri conti")}`:""} = ${tp(vr<0?"neg":"pos",vr,ht||fa?"Variazione del saldo del conto nel periodo: spese + entrate ± trasferimenti":"Differenza tra entrate e spese (i trasferimenti tra i tuoi conti si annullano)")}</span>`:""}</div>`+rcat+rows(l.slice(0,F.n),!F.a,F.a)+(l.length>F.n?`<p>${ib("chd","F.n+=200;lrows()","Mostra altri")}</p>`:"")||'<p class="mut">Nessun risultato.</p>';
 }
 
 /* ---------- Report ---------- */
@@ -890,7 +932,7 @@ function fixSet(i,c){const t=S.T.find(x=>x.i===i);if(!t||!c||!cm[c])return;t.c=c
 function fixSameAll(){const l=fixPeers(fxSame),c=fxSame&&fxSame.c;if(!c||!cm[c]){fxSame=null;render();return}l.forEach(t=>{t.c=c;if(t.s==="f")t.s="a"});fxSame=null;save();toast(l.length+(l.length===1?" movimento sistemato":" movimenti sistemati")+": "+path(c));render()}
 function fixSameBox(){const l=fixPeers(fxSame);if(!l.length||!cm[fxSame.c])return"";
   return `<div class="sum" style="gap:10px;align-items:center;margin-bottom:12px"><span>Altri ${l.length} con la nota «${esc(fxSame.l)}»<small>Dai anche a loro ${esc(path(fxSame.c))}?</small></span><span style="display:flex;gap:8px">${ib("check","fixSameAll()","Assegna la stessa categoria a tutti","p")}${ib("x","fxSame=null;render()","No, lascia così")}</span></div>`}
-function fixAll(){const ix=noteIdx();let n=0;noCat().forEach(t=>{const c=noteCat(ix,t.n,kind(t));if(c){t.c=c;if(t.s==="f")t.s="a";n++}});save();toast(n+(n===1?" categoria assegnata":" categorie assegnate"));render()}
+function fixAll(){uSnap();const ix=noteIdx();let n=0;noCat().forEach(t=>{const c=noteCat(ix,t.n,kind(t));if(c){t.c=c;if(t.s==="f")t.s="a";n++}});save();uToast(n+(n===1?" categoria assegnata":" categorie assegnate"));render()}
 /* Costi fissi: negli ultimi 12 mesi, stesso conto, categoria e nota in almeno 6 mesi diversi (al massimo 1,5 volte al mese),
    con l'ultimo pagamento negli ultimi 45 giorni; oppure nati da una ricorrenza. Escluse le spese straordinarie */
 function fxList(){const now=Date.now(),st=now-365*864e5,inc=new Set(S.A.filter(a=>a.tot).map(a=>a.i)),G={};
@@ -911,7 +953,7 @@ function ntCard(){const G={};S.T.forEach(t=>{if(t.b)return;const n=nNorm(t.n);if
   return `<div class="card"><h2>Note ricorrenti (${l.length})</h2><p class="mut">Le note che usi almeno 3 volte funzionano da etichette (persone, progetti, negozi): qui il totale di ciascuna su tutto lo storico, trasferimenti esclusi. Tocca una nota per vedere i suoi movimenti.</p>
   ${l.slice(0,ntN).map((g,k)=>`<div class="row" onclick="ntGo(${k})"><div class="m"><b>${esc(g.n)}</b><small>${g.c} movimenti · dal ${dt(g.f)} al ${dt(g.l)}</small></div><div class="r">${g.e?`<b class="neg">${eur(-g.e)}</b>`:""}${g.i?`<small style="display:block" class="pos">+${eur(g.i)}</small>`:""}</div></div>`).join("")}
   ${l.length>ntN?`<p>${ib("chd","ntN+=40;render()","Mostra altre")}</p>`:""}</div>`}
-function ntGo(k){const g=ntL[k];if(!g)return;F.q=g.n;F.a="";F.m="";F.y="";F.c=null;F.cl="";F.ids=null;F.nn=false;F.wn=false;F.tr="";F.rep=false;F.n=100;tab="list";render()}
+function ntGo(k){const g=ntL[k];if(!g)return;F.q=g.n;F.a="";F.m="";F.y="";F.c=null;F.cl="";F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.rep=false;F.n=100;tab="list";render()}
 /* Trasferimenti mancati: uscita ed entrata dello stesso importo su due conti diversi (nei totali), a non più di 3 giorni,
    nessuna delle due già trasferimento o scartata (t.tn), escluse le coppie con due categorie diverse (spesa e rimborso veri). Per ogni uscita, dalla più recente, l'entrata libera più vicina nel tempo */
 let tmN=30;
@@ -922,8 +964,8 @@ function tmPairs(){const inc=new Set(S.A.filter(a=>a.tot).map(a=>a.i)),ok=t=>!t.
 function tmCard(P){if(!P.length)return"";return `<div class="card"><h2>Trasferimenti mancati (${P.length})</h2><p class="mut">Un’uscita e un’entrata dello stesso importo su due conti diversi, a non più di 3 giorni di distanza, con la stessa categoria o senza: forse è un trasferimento registrato come spesa più entrata, che nei report gonfia sia le spese sia le entrate. Con la spunta diventano un solo trasferimento (data e conto dell’uscita); con la X la coppia non viene più proposta.</p>
   ${P.slice(0,tmN).map(([e,i])=>rows([e,i],1)+`<p>${ib("check","tmJoin('"+e.i+"','"+i.i+"')","Unisci in un trasferimento","p")} ${ib("x","tmNo('"+e.i+"','"+i.i+"')","Non è un trasferimento: togli dai suggerimenti")}</p>`).join("")}
   ${P.length>tmN?`<p>${ib("chd","tmN+=30;render()","Mostra altri")}</p>`:""}</div>`}
-function tmJoin(a,b){const e=S.T.find(x=>x.i===a),i=S.T.find(x=>x.i===b);if(!e||!i)return;e.b=i.a;e.y=i.x;if(!e.n&&i.n)e.n=i.n;if(!e.c&&i.c)e.c=i.c;delete e.xo;delete e.tn;if(e.s==="f")e.s="a";
-  S.T=S.T.filter(x=>x.i!==b);S.D.push(b);save();toast("Unito in un trasferimento");render()}
+function tmJoin(a,b){const e=S.T.find(x=>x.i===a),i=S.T.find(x=>x.i===b);if(!e||!i)return;uSnap();e.b=i.a;e.y=i.x;if(!e.n&&i.n)e.n=i.n;if(!e.c&&i.c)e.c=i.c;delete e.xo;delete e.tn;if(e.s==="f")e.s="a";
+  S.T=S.T.filter(x=>x.i!==b);S.D.push(b);save();uToast("Unito in un trasferimento");render()}
 function tmNo(a,b){[a,b].forEach(k=>{const t=S.T.find(x=>x.i===k);if(t)t.tn=1});save();toast("Tolto dai suggerimenti");render()}
 /* Spese straordinarie: restano nei saldi, escono dai report (R.xo). Suggerite: almeno 3 volte la mediana della categoria (o della principale) e non meno di 300 €; senza statistiche, da 1.000 € */
 let xoN=20;
@@ -950,7 +992,7 @@ const appInfo=()=>cfg(APPV)?"Versione "+esc(APPV)+(cfg(BUILD)?" · build "+esc(B
 function th(v){if(v)document.documentElement.dataset.theme=v;else delete document.documentElement.dataset.theme;render()}
 function addC(){const n=$("#nc").value.trim();if(!n||addP===null)return;if(S.C.some(x=>(x.p||null)===(addP||null)&&x.n.toLowerCase()===n.toLowerCase())){toast("Esiste già");return}S.C.push({i:uid(),n,p:addP||null});if(!addP)aqr="";addP=null;save();render()}
 function delC(i){const used=S.T.some(t=>t.c===i),kid=S.C.some(c=>c.p===i);if(used||kid){toast("Impossibile: categoria in uso o con sottocategorie");return}S.C=S.C.filter(c=>c.i!==i);save();render()}
-function delDup(i){S.T=S.T.filter(x=>x.i!==i);S.D.push(i);save();toast("Eliminato");render()}
+function delDup(i){uSnap();S.T=S.T.filter(x=>x.i!==i);S.D.push(i);save();uToast("Eliminato");render()}
 /* ---------- Privacy: nasconde importi, assi e tooltip dei grafici ---------- */
 function pvApply(){if(!window.Chart||!Chart.defaults)return;const d=Chart.defaults;
   if(d.scales&&d.scales.linear&&d.scales.linear.ticks){if(!pvApply.o)pvApply.o=d.scales.linear.ticks.callback;d.scales.linear.ticks.callback=PV?()=>"":pvApply.o}
