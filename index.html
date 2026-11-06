@@ -297,7 +297,9 @@ const addM=(d,n,dd)=>{const o=new Date(d);o.setDate(1);o.setMonth(o.getMonth()+n
 const nxt=r=>r.f==="w"?r.next+7*864e5:addM(r.next,r.f==="y"?12:1,r.dd);
 const rcLabel=r=>(r.k==="t"?`${esc(an(r.a))} → ${esc(an(r.b))}`:esc(r.c?path(r.c):"no categoria"))+(r.n?" ("+esc(r.n)+")":"");
 function rcMake(r){const c=Math.abs(r.x);S.T.push({i:uid(),d:r.next,a:r.a,b:r.k==="t"?r.b:null,c:r.k==="t"?null:r.c,x:r.k==="i"?c:-c,y:r.k==="t"?c:0,n:r.n||"",s:"a",ins:Date.now(),rc:r.i})}
-function dueCard(){const now=Date.now(),l=S.RC.filter(r=>r.next<=now).sort((a,b)=>a.next-b.next);if(!l.length)return"";
+// in scadenza dal primo minuto del giorno: r.next conserva l'orario del movimento da cui è nata la ricorrenza
+const rcDue=r=>{const e=new Date();e.setHours(23,59,59,999);return r.next<=e.getTime()};
+function dueCard(){const l=S.RC.filter(rcDue).sort((a,b)=>a.next-b.next);if(!l.length)return"";
   return `<div class="card"><h2>In scadenza</h2>${l.map(r=>`<div class="row" style="cursor:default"><div class="m"><b>${rcLabel(r)}</b><small>${dt(r.next)} · ${esc(an(r.a))}</small></div><div class="r ${r.k==="e"?"neg":r.k==="i"?"pos":""}">${eur(r.k==="e"?-r.x:r.x)}</div>${ib("check","rcDo('"+r.i+"')","Inserisci","p")}${ib("x","rcSkip('"+r.i+"')","Salta questa scadenza")}</div>`).join("")}</div>`}
 function rcDo(i){const r=S.RC.find(x=>x.i===i);if(!r)return;rcMake(r);r.next=nxt(r);save();toast("Movimento inserito");render()}
 function rcSkip(i){const r=S.RC.find(x=>x.i===i);if(!r)return;r.next=nxt(r);save();render()}
@@ -360,9 +362,12 @@ function ptMini(){const c=$("#c4");if(!c||!window.Chart)return;const p=patr(""),
     options:{maintainAspectRatio:false,events:[],plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{ticks:{color:col("--mut"),maxTicksLimit:6}},y:{ticks:{color:col("--mut"),maxTicksLimit:4},grid:{color:col("--line")}}}}}))}
 function fxOpen(){tab="more";mGo("fx")}
 function ptOpen(){PT.a="";go("acc");const c=$("#c3");if(c)c.closest(".card").scrollIntoView({block:"start"})}
+// Categoria della rettifica: l'ultima scelta (localStorage cassetto_recc) o "Rettifica saldo", creata al primo uso
+function recOpts(){let k="";try{k=localStorage.getItem("cassetto_recc")||""}catch(e){}if(k&&!(cm[k]&&!cm[k].ar))k="";const r=S.C.find(x=>x.n==="Rettifica saldo");
+  return (r?"":`<option value="">Rettifica saldo (nuova)</option>`)+S.C.filter(c=>!c.ar).map(c=>[c.i,path(c.i)]).sort((x,y)=>x[1].localeCompare(y[1],"it")).map(([i,n])=>`<option value="${i}"${i===(k||(r&&r.i))?" selected":""}>${esc(n)}</option>`).join("")}
 function doRec(){const a=acc(rcSrc),v=pn($("#rc-v").value);if(!a||isNaN(v)){toast("Inserisci il saldo reale");return}
   const diff=Math.round(v*100)-bal(a.i);if(!diff){toast("Il saldo coincide già");rcSrc=null;render();return}
-  let c=S.C.find(x=>x.n==="Rettifica saldo");if(!c){c={i:"nrett",n:"Rettifica saldo",p:null};S.C.push(c)}
+  const k=$("#rc-c")?$("#rc-c").value:"";let c=k&&cm[k];if(!c){c=S.C.find(x=>x.n==="Rettifica saldo");if(!c){c={i:"nrett",n:"Rettifica saldo",p:null};S.C.push(c)}}try{localStorage.setItem("cassetto_recc",c.i)}catch(e){}
   S.T.push({i:uid(),d:Date.now(),a:a.i,b:null,c:c.i,x:diff,y:0,n:"Rettifica saldo",s:"a",ins:Date.now()});rcSrc=null;save();toast("Rettifica registrata: "+eur(diff));render()}
 const mapc=i=>{let g=0;while(S.M&&S.M[i]&&g++<20)i=S.M[i];return i};
 // Spostamento: qualsiasi categoria attiva tranne se stessa e le sue sottocategorie, oppure in cima (principale)
@@ -389,6 +394,8 @@ const swSkip=el=>{for(;el&&el!==document.body;el=el.parentElement){if(el.matches
 document.addEventListener("touchstart",e=>{const p=e.touches[0];sw0=e.touches.length===1&&p.clientX>24&&p.clientX<innerWidth-24&&!swSkip(e.target)?{x:p.clientX,y:p.clientY,t:Date.now()}:null},{passive:true}); // bordi lasciati al gesto "indietro" del sistema
 document.addEventListener("touchend",e=>{if(!sw0)return;const p=e.changedTouches[0],dx=p.clientX-sw0.x,dy=p.clientY-sw0.y,dt=Date.now()-sw0.t;sw0=null;
   if(Math.abs(dx)<70||Math.abs(dx)<2*Math.abs(dy)||dt>700||!$("#v").contains(e.target))return;
+  const ar=tab==="home"&&dx>0&&e.target.closest&&e.target.closest("[data-acc]"); // Home: swipe a destra su un conto apre Aggiungi con quel conto
+  if(ar){const a=ar.dataset.acc;editId=null;ek="e";pre={k:"e",a,b:defTo(a),c:defCat(a,"e"),amt:"",n:""};go("add");return}
   const k=tabs.findIndex(x=>x[0]===tab)+(dx<0?1:-1);if(k>=0&&k<tabs.length)go(tabs[k][0])},{passive:true});
 function acRun(){aqr=$("#ac-q").value;const t=$("#ac-tree");if(t&&acT)t.innerHTML=acT()}
 function acAdd(){addPre=($("#ac-q").value||"").trim();addP="";render()}
@@ -425,7 +432,8 @@ function vHome(){
   const dd=ms=>ms?new Date(ms).toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"2-digit"}):"";
   const row=a=>{const v=bal(a.i),c=v<0?"neg":v>0?"pos":"";
     if(ordEdit)return `<div class="row" style="cursor:default"><div class="m"><b>${esc(a.n)}</b><small>${esc(TY[a.t]||a.t||"Altro")}</small></div><input type="number" inputmode="numeric" value="${a.so==null?"":a.so}" aria-label="Ordinamento di ${esc(a.n)}" style="width:76px;text-align:right" onchange="setSo('${a.i}',this.value)">${ib("chu","mvSo('"+a.i+"',-1)","Sposta su")}${ib("chd","mvSo('"+a.i+"',1)","Sposta giù")}</div>`;
-    return `<div class="row" onclick="goAcc('${a.i}')"><div class="m"><small style="display:block">${esc(TY[a.t]||a.t||"Altro")}${a.tot?"":" · fuori dai totali"}</small><b style="font-size:17px">${esc(a.n)}</b><small style="display:block">${dd(ld[a.i])}</small></div><div class="r ${c}" style="font-size:17px">${eur(v)}</div></div>`};
+    const nd=S.RC.filter(r=>rcDue(r)&&(r.a===a.i||r.b===a.i)).length;
+    return `<div class="row" data-acc="${a.i}" onclick="goAcc('${a.i}')"><div class="m"><small style="display:block">${esc(TY[a.t]||a.t||"Altro")}${a.tot?"":" · fuori dai totali"}</small><b style="font-size:17px">${esc(a.n)}${nd?`<button class="b g chip" style="margin-left:8px;padding:2px 8px;font-size:12px;vertical-align:middle;color:var(--acc)" title="${nd===1?"1 movimento programmato da inserire":nd+" movimenti programmati da inserire"}" onclick="event.stopPropagation();editId=null;go('add')">${ic("repeat",14)} ${nd}</button>`:""}</b><small style="display:block">${dd(ld[a.i])}</small></div><div class="r ${c}" style="font-size:17px">${eur(v)}</div></div>`};
   $("#v").innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between"><h1>Financial</h1>${ib(ordEdit?"check":"edit","ordEdit=!ordEdit;render()",ordEdit?"Fine":"Cambia l’ordine dei conti")}</div>
   ${ordEdit?`<p class="mut" style="margin:0 0 10px">Come in Financisto, il numero più alto va più in alto. Cambia il numero oppure usa le frecce.</p>`:""}
   <div class="card">${l.map(row).join("")||'<p class="mut">Nessun conto. Importa il backup da Altro o crea un conto in Conti.</p>'}</div>
@@ -667,8 +675,8 @@ function vRep(){
 /* ---------- Conti ---------- */
 function vAcc(){
   const on=sortedAcc(),off=S.A.filter(a=>!a.on),tot=S.A.filter(a=>a.tot&&a.on).reduce((s,a)=>s+bal(a.i),0),nx=S.A.filter(a=>!a.tot&&a.on).length,ex=S.A.filter(a=>!a.tot&&a.on).reduce((s,a)=>s+bal(a.i),0);
-  const li=a=>`<div class="row" style="cursor:default"><input value="${esc(a.n)}" onchange="ren('A','${a.i}',this.value)" style="flex:1"><span class="r ${bal(a.i)<0?"neg":""}" style="min-width:96px;cursor:pointer;text-decoration:underline dotted" title="Tocca per riconciliare il saldo" onclick="rcSrc='${a.i}';render()">${eur(bal(a.i))}</span>${ib(a.tot?"sum":"sumoff","togT('"+a.i+"')",a.tot?"Incluso nei totali: tocca per escludere":"Escluso dai totali: tocca per includere",a.tot?"p":"g")}${ib(a.on?"arch":"rest","togA('"+a.i+"')",a.on?"Archivia":"Riattiva")}</div>`+(rcSrc===a.i?`<div class="row" style="cursor:default"><span class="mut">Saldo reale:</span><input id="rc-v" inputmode="decimal" placeholder="${PV?"":(bal(a.i)/100).toFixed(2).replace(".",",")}" style="flex:1">${ib("check","doRec()","Conferma","p")}${ib("x","rcSrc=null;render()","Annulla")}</div>`:"");
-  $("#v").innerHTML=`<h1>Conti</h1><div class="card"><div class="sum"><span>Totale (conti inclusi nei totali)</span><b>${eur(tot)}</b></div>${netRows(tot)}${nx?`<div class="sum"><span class="mut">Fuori dai totali (${nx})</span><b class="mut">${eur(ex)}</b></div>`:""}<p class="mut">Il simbolo Σ pieno indica un conto incluso nei totali, quello barrato un conto escluso. Vale anche per i report.</p>${on.map(li).join("")||'<p class="mut">Nessun conto.</p>'}</div>
+  const li=a=>`<div class="row" style="cursor:default"><input value="${esc(a.n)}" onchange="ren('A','${a.i}',this.value)" style="flex:1"><span class="r ${bal(a.i)<0?"neg":""}" style="min-width:96px;cursor:pointer;text-decoration:underline dotted" title="Tocca per riconciliare il saldo" onclick="rcSrc='${a.i}';render()">${eur(bal(a.i))}</span>${ib(a.tot?"sum":"sumoff","togT('"+a.i+"')",a.tot?"Incluso nei totali: tocca per escludere":"Escluso dai totali: tocca per includere",a.tot?"p":"g")}${ib(a.on?"arch":"rest","togA('"+a.i+"')",a.on?"Archivia":"Riattiva")}</div>`+(rcSrc===a.i?`<div class="row" style="cursor:default"><span class="mut">Saldo reale:</span><input id="rc-v" inputmode="decimal" placeholder="${PV?"":(bal(a.i)/100).toFixed(2).replace(".",",")}" style="flex:1;min-width:0">${ib("check","doRec()","Conferma","p")}${ib("x","rcSrc=null;render()","Annulla")}</div><div class="row" style="cursor:default"><span class="mut">Categoria:</span><select id="rc-c" aria-label="Categoria della rettifica" style="flex:1;min-width:0">${recOpts()}</select></div>`:"");
+  $("#v").innerHTML=`<h1>Conti</h1><div class="card"><div class="sum"><span>Totale (conti inclusi nei totali)</span><b>${eur(tot)}</b></div>${netRows(tot)}${nx?`<div class="sum"><span class="mut">Fuori dai totali (${nx})</span><b class="mut">${eur(ex)}</b></div>`:""}<p class="mut">Il simbolo Σ pieno indica un conto incluso nei totali, quello barrato un conto escluso. Vale anche per i report. Se un saldo non torna con la banca, toccalo e scrivi quello reale: l’app registra la differenza come movimento nella categoria che scegli (la rettifica conta nei report come spesa o entrata).</p>${on.map(li).join("")||'<p class="mut">Nessun conto.</p>'}</div>
   ${ptCard()}<div class="card"><h2>Nuovo conto</h2><div class="two"><input id="na" placeholder="Nome, ad esempio Cassa"><select id="nt"><option value="CASH">contanti</option><option value="BANK">conto bancario</option><option value="CREDIT_CARD">carta di credito</option><option value="ELECTRONIC">elettronico</option><option value="OTHER">altro</option></select></div><p>${ib("plus","addA()","Aggiungi conto","p")}</p></div>
   ${off.length?`<div class="card"><h2>Archiviati</h2>${off.map(li).join("")}</div>`:""}`;
 }
