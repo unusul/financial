@@ -190,16 +190,17 @@ async function bkList(){
   const l=await(await gf(DQ+"?spaces=appDataFolder&pageSize=100&fields=files(id,appProperties)&q="+encodeURIComponent("name contains 'cassetto-backup-'"))).json();
   return(l.files||[]).map(f=>({k:f.id,t:+(f.appProperties||{}).t||0,n:+(f.appProperties||{}).n||0})).sort((a,b)=>b.t-a.t)}
 const bkDel=o=>gMode()==="fb"?fbJ("","PATCH",{["b/"+o.k]:null,["bi/"+o.k]:null}):gf(DQ+"/"+o.k,{method:"DELETE"});
+function bkMark(t){if(!t)return;let c=S.P.find(x=>x.i==="bk");if(!c){c={i:"bk"};S.P.push(c)}if(!(c.t>=t)){c.t=t;save()}}
 async function bkSend(){bkMsg("Invio del backup…");
   try{if(!await gSync(false))throw new Error(gBusy?"sincronizzazione in corso, riprova":gMsg.replace(/^Sincronizzazione non riuscita: /,""));
     const t=Date.now(),z=zip(JSON.stringify(S)),n=S.T.length;
     if(gMode()==="fb")await fbJ("","PATCH",{["b/"+t]:z,["bi/"+t]:{t,n}});
     else await drvPut("cassetto-backup-"+t+".txt",z,null,{t:String(t),n:String(n)},"text/plain");
     const l=await bkList();for(const o of l.slice(BKN))await bkDel(o);
-    bkL=l.slice(0,BKN);bkM="Backup inviato a "+gName()+": "+bkL.length+(bkL.length===1?" copia conservata":" copie conservate");render()
+    bkL=l.slice(0,BKN);bkMark(t);bkM="Backup inviato a "+gName()+": "+bkL.length+(bkL.length===1?" copia conservata":" copie conservate");render()
   }catch(e){bkMsg("Backup non riuscito: "+e.message)}}
 async function bkShow(){if(bkL){bkL=null;bkM="";render();return}bkMsg("Carico l’elenco dei backup…");
-  try{await(gMode()==="fb"?fbAuth(false):gAuth(false));bkL=await bkList();bkM=bkL.length?"":"Nessun backup in "+gName();render()}catch(e){bkMsg("Elenco non disponibile: "+e.message)}}
+  try{await(gMode()==="fb"?fbAuth(false):gAuth(false));bkL=await bkList();if(bkL.length)bkMark(bkL[0].t);bkM=bkL.length?"":"Nessun backup in "+gName();render()}catch(e){bkMsg("Elenco non disponibile: "+e.message)}}
 async function bkPick(i){const o=bkL&&bkL[i];if(!o)return;bkMsg("Scarico il backup…");
   try{const z=gMode()==="fb"?await fbF("b/"+o.k):await(await gf(DQ+"/"+o.k+"?alt=media")).text(),j=JSON.parse(unz(z));
     if(!Array.isArray(j.T)||!Array.isArray(j.A))throw new Error("copia non valida");
@@ -497,8 +498,9 @@ const HBK={
     return `<div class="sum" role="button" style="border:0;padding:4px 0;cursor:pointer" title="Apri Conti" onclick="go('acc')"><span>Totale<small>Conti inclusi nei totali ›</small></span><b class="${tot<0?"neg":"pos"}" style="font-size:22px">${eur(tot)}</b></div>${netRows(tot)}`},
   pace:()=>{const r=paceRow();return r?r.replace('<div class="sum">','<div class="sum" role="button" style="cursor:pointer" title="Apri il Report del mese" onclick="repOpen(\'m\',mk(Date.now()))">').replace("straordinari esclusi)","straordinari esclusi) ›"):""},
   fx:()=>{const l=fxList(),m=l.reduce((s,o)=>s+o.mo,0);return l.length?`<div class="sum" role="button" style="cursor:pointer" title="Apri Costi fissi" onclick="fxOpen()"><span>Costi fissi<small>${l.length} pagamenti che si ripetono ogni mese, circa ${eur(m*12)} all’anno ›</small></span><b class="neg">${eur(-m)}</b></div>`:""},
-  todo:()=>{const l=[["fx","Costi fissi aumentati","rispetto a un anno fa",fxList().filter(o=>o.up!=null).length],["fix","Da sistemare","movimenti senza categoria",noCat().length],["xo","Straordinari","da valutare",xoSug().length],["tm","Trasferimenti mancati","coppie da valutare",tmPairs().length]].filter(x=>x[3]);
-    return `<h2>Da fare</h2>${l.map(([k,n,d,c])=>`<div class="sum" role="button" style="cursor:pointer" title="Apri ${n}" onclick="tab='more';mGo('${k}')"><span>${n}<small>${d} ›</small></span><b>${c}</b></div>`).join("")||'<p class="mut" style="margin:0">Niente da sistemare.</p>'}`},
+  todo:()=>{const bt=(S.P.find(x=>x.i==="bk")||{}).t,bd=bt?Math.floor((Date.now()-bt)/864e5):null;
+    const l=[["fx","Costi fissi aumentati","rispetto a un anno fa",fxList().filter(o=>o.up!=null).length],["dati","Backup online",bt?"ultimo il "+dt(bt):"nessuno registrato: invialo da Dati e sincronizzazione",bt?(bd===0?"oggi":bd===1?"ieri":bd+" giorni fa"):"mai",1],["fix","Da sistemare","movimenti senza categoria",noCat().length],["xo","Straordinari","da valutare",xoSug().length],["tm","Trasferimenti mancati","coppie da valutare",tmPairs().length]].filter(x=>x[3]);
+    return `<h2>Da fare</h2>${l.map(([k,n,d,c,b])=>`<div class="sum" role="button" style="cursor:pointer" title="Apri ${b?"Dati e sincronizzazione":n}" onclick="tab='more';mGo('${k}')"><span>${n}<small>${d} ›</small></span><b${b&&(!bt||bd>30)?' class="neg"':""}>${c}</b></div>`).join("")||'<p class="mut" style="margin:0">Niente da sistemare.</p>'}`},
   due:()=>{const e=new Date();e.setHours(23,59,59,999);const lim=e.getTime()+7*864e5,l=S.RC.filter(r=>r.next<=lim).sort((a,b)=>a.next-b.next);
     return hHead("Programmati in arrivo","tab='more';mGo('rc')","Apri Movimenti programmati")+(l.map(r=>{const d=rcDue(r);return `<div class="row" onclick="${d?"editId=null;go('add')":"tab='more';mGo('rc')"}"><div class="m"><b>${rcLabel(r)}</b><small>${d?'<span style="color:var(--acc)">da inserire</span> · ':""}${dt(r.next)} · ${esc(an(r.a))}</small></div><div class="r ${r.k==="e"?"neg":r.k==="i"?"pos":""}">${eur(r.k==="e"?-r.x:r.x)}</div></div>`}).join("")||'<p class="mut" style="margin:0">Nessun movimento programmato nei prossimi 7 giorni.</p>')},
   last:()=>{const now=Date.now(),l=S.T.filter(t=>t.d<=now).sort((a,b)=>b.d-a.d).slice(0,5);return hHead("Ultimi movimenti","listGo()","Apri Movimenti")+(rows(l,1)||'<p class="mut" style="margin:0">Nessun movimento.</p>')},
