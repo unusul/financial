@@ -20,7 +20,7 @@ nav button{flex:1;border:0;background:none;color:var(--mut);font:600 13px Figtre
 nav button.on{color:var(--acc);box-shadow:inset 0 3px var(--acc)}
 main{max-width:1100px;margin:0 auto;padding:16px 14px 96px}
 h1{font-size:22px;margin:4px 0 14px}h2{font-size:17px;margin:0 0 10px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}.hg{margin-bottom:14px}.hg>.card{break-inside:avoid;margin:0 0 14px}.hg h2 .mut{font-weight:400}.hbar{display:flex;align-items:center;gap:6px;margin:-4px 0 10px}.hbar b{flex:1;font-size:15px}@media (min-width:900px){.hg{columns:2;column-gap:14px}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}#v{touch-action:pan-y}.hg{margin-bottom:14px}.hg>.card{break-inside:avoid;margin:0 0 14px}.hg h2 .mut{font-weight:400}.hbar{display:flex;align-items:center;gap:6px;margin:-4px 0 10px}.hbar b{flex:1;font-size:15px}@media (min-width:900px){.hg{columns:2;column-gap:14px}}
 label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
 input,select,button.b{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;width:100%}
 input:focus,select:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
@@ -69,7 +69,7 @@ let S=null;
 try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
 S=S||{A:[],C:[],T:[],D:[],L:{}};S.RC=S.RC||[];S.LN=S.LN||[];S.V=S.V||[];S.P=S.P||[];
 const $=s=>document.querySelector(s);
-const P={tag:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><path d="M7 7h.01"/>',plus:'<path d="M12 5v14M5 12h14"/>',plusc:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',chart:'<path d="M5 20V11M12 20V4M19 20v-6"/>',card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',dots:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',adown:'<path d="M5 12h14"/>',aup:'<path d="M12 5v14M5 12h14"/>',swap:'<path d="M4 8h16M16 4l4 4-4 4M20 16H4M8 12l-4 4 4 4"/>',check:'<path d="M5 12l5 5 9-10"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',copy:'<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/>',chd:'<path d="M6 9l6 6 6-6"/>',chu:'<path d="M18 15l-6-6-6 6"/>',arch:'<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8M10 12h4"/>',rest:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>',dl:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',up:'<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>',merge:'<path d="M6 3v6c0 3 3 5 6 5s6-2 6-5V3M12 14v7"/>',sum:'<path d="M18 5H6l7 7-7 7h12"/>',sumoff:'<path d="M18 5H6l7 7-7 7h12"/><path d="M3 3l18 18"/>',repeat:'<path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/>',checkplus:'<path d="M3 13l4 4 8-9"/><path d="M19 4v6M16 7h6"/>'};
+const P={tag:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><path d="M7 7h.01"/>',plus:'<path d="M12 5v14M5 12h14"/>',plusc:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',chart:'<path d="M5 20V11M12 20V4M19 20v-6"/>',card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',dots:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',adown:'<path d="M5 12h14"/>',aup:'<path d="M12 5v14M5 12h14"/>',swap:'<path d="M4 8h16M16 4l4 4-4 4M20 16H4M8 12l-4 4 4 4"/>',check:'<path d="M5 12l5 5 9-10"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',fold:'<path d="M4 6h16M4 12h10M4 18h6"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',copy:'<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/>',chd:'<path d="M6 9l6 6 6-6"/>',chu:'<path d="M18 15l-6-6-6 6"/>',arch:'<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8M10 12h4"/>',rest:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>',dl:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',up:'<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>',merge:'<path d="M6 3v6c0 3 3 5 6 5s6-2 6-5V3M12 14v7"/>',sum:'<path d="M18 5H6l7 7-7 7h12"/>',sumoff:'<path d="M18 5H6l7 7-7 7h12"/><path d="M3 3l18 18"/>',repeat:'<path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/>',checkplus:'<path d="M3 13l4 4 8-9"/><path d="M19 4v6M16 7h6"/>'};
 P.eye='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>';P.eyeoff='<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/>';
 const ic=(n,s)=>`<svg viewBox="0 0 24 24" width="${s||22}" height="${s||22}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
 const ib=(n,f,t,c)=>`<button class="b ${c||"g"} ic" title="${t}" aria-label="${t}" onclick="${f}">${ic(n)}</button>`;
@@ -433,7 +433,7 @@ function render(){const y0=window.scrollY,sk=tab+"|"+(tab==="more"?mSec:""),s0=[
   $("#nav").innerHTML=tabs.map(([k,n,i])=>`<button class="${k===tab?"on":""}" title="${n}" aria-label="${n}" onclick="go('${k}')">${ic(i,24)}</button>`).join("")+`<button title="${PV?"Mostra i valori":"Nascondi i valori"}" aria-label="${PV?"Mostra i valori":"Nascondi i valori"}"${PV?` style="color:var(--acc)"`:""} onclick="pvTog()">${ic(PV?"eyeoff":"eye",24)}</button>`;
   ch.forEach(c=>c.destroy());ch=[];
   ({home:vHome,add:vAdd,list:vList,rep:vRep,acc:vAcc,more:vMore})[tab]();
-  if(tab==="acc")ptDraw();if(tab==="home"){ptMini();m12Draw()}
+  if(tab==="acc")ptDraw();if(tab==="home"){document.querySelectorAll("[data-keep]").forEach(b=>[...b.children].forEach((e,i)=>{if(i>=+b.dataset.keep)e.style.display="none"}));ptMini();m12Draw()}
   window.scrollTo(0,lt===tab?y0:0);lt=tab;
   if(lsc===sk)document.querySelectorAll(".scr").forEach((e,k)=>{if(s0[k])e.scrollTop=s0[k]});lsc=sk;
   navSync();
@@ -448,11 +448,17 @@ function setSo(i,v){const a=acc(i);if(!a)return;a.so=parseInt(v)||0;a.sl=1;save(
 function mvSo(i,d){const l=sortedAcc(),k=l.findIndex(a=>a.i===i),j=k+d;if(k<0||j<0||j>=l.length)return;
   l.forEach((a,n)=>{a.so=(l.length-n)*10;a.sl=1});const t=l[k].so;l[k].so=l[j].so;l[j].so=t;save();render()}
 /* Home a blocchi: ordine e visibilità in S.P (id "home"), modificabili con la matita. Ogni blocco porta alla sua fonte */
-const HB=[["acc","Conti"],["tot","Totale e patrimonio"],["pace","Spese del mese"],["fx","Costi fissi"],["todo","Da fare"],["due","Programmati in arrivo"],["last","Ultimi movimenti"],["cat","Spese del mese per categoria"],["m12","Ultimi 12 mesi"],["ytd","Risparmio dell’anno"],["pt","Andamento del patrimonio"]];
-function hCfg(){const c=S.P.find(x=>x.i==="home")||{o:[],h:[]},o=(c.o||[]).filter(k=>HB.some(x=>x[0]===k));HB.forEach(([k])=>{if(!o.includes(k))o.push(k)});return{o,h:(c.h||[]).filter(k=>o.includes(k))}}
-function hPut(o,h){let c=S.P.find(x=>x.i==="home");if(!c){c={i:"home"};S.P.push(c)}c.o=o;c.h=h;save();render()}
-function hMv(k,d){const{o,h}=hCfg(),i=o.indexOf(k),j=i+d;if(j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];hPut(o,h)}
-function hEye(k){const{o,h}=hCfg();hPut(o,h.includes(k)?h.filter(x=>x!==k):h.concat(k))}
+const HB=[["acc","Conti"],["tot","Totale e patrimonio"],["sum","Risparmio e spese"],["todo","Da fare"],["due","Programmati in arrivo"],["last","Ultimi movimenti"],["cat","Spese del mese per categoria"],["m12","Ultimi 12 mesi"],["pt","Andamento del patrimonio"]];
+const HKEEP={todo:2,due:2,last:2,cat:2}; // righe visibili quando il blocco parte ridotto (le altre: 1)
+let hOpen=new Set(); // blocchi ridotti aperti in questa sessione
+// pace, fx e ytd (versione precedente) confluiscono in "sum" al posto del primo dei tre
+function hCfg(){const c=S.P.find(x=>x.i==="home")||{o:[],h:[],r:[]},o=[];(c.o||[]).forEach(k=>{if(["pace","fx","ytd"].includes(k))k="sum";if(HB.some(x=>x[0]===k)&&!o.includes(k))o.push(k)});HB.forEach(([k])=>{if(!o.includes(k))o.push(k)});
+  const h=(c.h||[]).filter(k=>o.includes(k)),r=(c.r||[]).filter(k=>o.includes(k));return{o,h,r}}
+function hPut(o,h,r){let c=S.P.find(x=>x.i==="home");if(!c){c={i:"home"};S.P.push(c)}c.o=o;c.h=h;c.r=r;save();render()}
+function hMv(k,d){const{o,h,r}=hCfg(),i=o.indexOf(k),j=i+d;if(j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];hPut(o,h,r)}
+function hEye(k){const{o,h,r}=hCfg();hPut(o,h.includes(k)?h.filter(x=>x!==k):h.concat(k),r)}
+function hRid(k){const{o,h,r}=hCfg();hPut(o,h,r.includes(k)?r.filter(x=>x!==k):r.concat(k))}
+function hTog(k){hOpen.has(k)?hOpen.delete(k):hOpen.add(k);render()}
 const hInc=()=>new Set(S.A.filter(a=>a.tot).map(a=>a.i)),hFlow=t=>!t.b&&!(R.xo&&t.xo); // movimenti come nel Report: niente trasferimenti, straordinari esclusi se il fulmine è attivo
 function repGo(sc,v){R.sc=sc;if(sc==="m")R.m=v;if(sc==="y")R.y=v;editId=null;go("rep")}
 function listGo(){F.q="";F.a="";F.m="";F.y="";F.c=null;F.cl="";F.ids=null;F.rep=false;F.n=100;editId=null;go("list")}
@@ -467,8 +473,8 @@ const HBK={
     return (hEd?`<p class="mut" style="margin:0 0 8px">Ordine dei conti: il numero più alto va più in alto.</p>`:"")+(l.map(row).join("")||'<p class="mut">Nessun conto. Importa il backup da Altro o crea un conto in Conti.</p>')},
   tot:()=>{const tot=sortedAcc().filter(a=>a.tot).reduce((s,a)=>s+bal(a.i),0);
     return `<div class="sum" role="button" style="border:0;padding:4px 0;cursor:pointer" title="Apri Conti" onclick="go('acc')"><span>Totale<small>Conti inclusi nei totali ›</small></span><b class="${tot<0?"neg":"pos"}" style="font-size:22px">${eur(tot)}</b></div>${netRows(tot)}`},
-  pace:()=>{const r=paceRow();return r?r.replace('<div class="sum">','<div class="sum" role="button" style="border:0;padding:4px 0;cursor:pointer" title="Apri il Report del mese" onclick="repGo(\'m\',mk(Date.now()))">').replace("straordinari esclusi)","straordinari esclusi) ›"):""},
-  fx:()=>{const l=fxList(),m=l.reduce((s,o)=>s+o.mo,0);return l.length?`<div class="sum" role="button" style="border:0;padding:4px 0;cursor:pointer" title="Apri Costi fissi" onclick="fxOpen()"><span>Costi fissi<small>${l.length} pagamenti che si ripetono ogni mese, circa ${eur(m*12)} all’anno ›</small></span><b class="neg">${eur(-m)}</b></div>`:""},
+  pace:()=>{const r=paceRow();return r?r.replace('<div class="sum">','<div class="sum" role="button" style="cursor:pointer" title="Apri il Report del mese" onclick="repGo(\'m\',mk(Date.now()))">').replace("straordinari esclusi)","straordinari esclusi) ›"):""},
+  fx:()=>{const l=fxList(),m=l.reduce((s,o)=>s+o.mo,0);return l.length?`<div class="sum" role="button" style="cursor:pointer" title="Apri Costi fissi" onclick="fxOpen()"><span>Costi fissi<small>${l.length} pagamenti che si ripetono ogni mese, circa ${eur(m*12)} all’anno ›</small></span><b class="neg">${eur(-m)}</b></div>`:""},
   todo:()=>{const l=[["fix","Da sistemare","movimenti senza categoria",noCat().length],["xo","Straordinari","da valutare",xoSug().length],["tm","Trasferimenti mancati","coppie da valutare",tmPairs().length]].filter(x=>x[3]);
     return `<h2>Da fare</h2>${l.map(([k,n,d,c])=>`<div class="sum" role="button" style="cursor:pointer" title="Apri ${n}" onclick="tab='more';mGo('${k}')"><span>${n}<small>${d} ›</small></span><b>${c}</b></div>`).join("")||'<p class="mut" style="margin:0">Niente da sistemare.</p>'}`},
   due:()=>{const e=new Date();e.setHours(23,59,59,999);const lim=e.getTime()+7*864e5,l=S.RC.filter(r=>r.next<=lim).sort((a,b)=>a.next-b.next);
@@ -481,15 +487,17 @@ const HBK={
   ytd:()=>{const inc=hInc(),now=new Date(),cy=now.getFullYear(),md=loc(Date.now()).slice(5,10),o={[cy]:[0,0],[cy-1]:[0,0]};
     S.T.forEach(t=>{if(!hFlow(t)||!inc.has(t.a))return;const d=loc(t.d),y=+d.slice(0,4);if(!(y in o)||d.slice(5,10)>md)return;o[y][t.x<0?1:0]+=Math.abs(t.x)});
     const r=y=>o[y][0]-o[y][1],a=r(cy),p=r(cy-1),pc=y=>o[y][0]>0?Math.round(r(y)/o[y][0]*100)+"%":"–";
-    return `<div class="sum" role="button" style="border:0;padding:4px 0;cursor:pointer" title="Apri il Report dell’anno" onclick="repGo('y','${cy}')"><span>Risparmio dell’anno<small>Da inizio anno: tasso ${pc(cy)}; stesso periodo del ${cy-1}: ${eur(p)} (${pc(cy-1)}) ›</small></span><b class="${a<0?"neg":"pos"}">${eur(a)}</b></div>`},
-  pt:()=>`<div role="button" style="cursor:pointer" title="Apri l’andamento completo in Conti" onclick="ptOpen()"><h2>Andamento del patrimonio <span class="mut">›</span></h2><div class="cv" style="height:180px"><canvas id="c4"></canvas></div><p class="mut" style="margin:6px 0 0;font-size:13px">Conti inclusi nei totali, ultimi 24 mesi: linea piena il saldo reale, tratteggiata la proiezione a 12 mesi senza straordinari.</p></div>`};
+    return `<div class="sum" role="button" style="cursor:pointer" title="Apri il Report dell’anno" onclick="repGo('y','${cy}')"><span>Risparmio dell’anno<small>Da inizio anno: tasso ${pc(cy)}; stesso periodo del ${cy-1}: ${eur(p)} (${pc(cy-1)}) ›</small></span><b class="${a<0?"neg":"pos"}">${eur(a)}</b></div>`},
+  sum:()=>["ytd","fx","pace"].map(k=>HBK[k]()).filter(Boolean).join(""),
+  pt:()=>hHead("Andamento del patrimonio","ptOpen()","Apri l’andamento completo in Conti")+`<div class="cv" style="height:180px;cursor:pointer" onclick="ptOpen()"><canvas id="c4"></canvas></div><p class="mut" style="margin:6px 0 0;font-size:13px">Conti inclusi nei totali, ultimi 24 mesi: linea piena il saldo reale, tratteggiata la proiezione a 12 mesi senza straordinari.</p>`};
 let hEd=false;
-function vHome(){const{o,h}=hCfg(),last=o.length-1;
-  const blk=(k,i)=>{const hid=h.includes(k),n=HB.find(x=>x[0]===k)[1];if(hid&&!hEd)return"";let c="";try{c=HBK[k]()}catch(e){c=""}
-    if(!hEd)return c?`<div class="card">${c}</div>`:"";
-    return `<div class="card"${hid?' style="opacity:.5"':""}><div class="hbar"><b>${n}</b>${i>0?ib("chu","hMv('"+k+"',-1)","Sposta su"):""}${i<last?ib("chd","hMv('"+k+"',1)","Sposta giù"):""}${ib(hid?"eyeoff":"eye","hEye('"+k+"')",hid?"Nascosto: tocca per mostrarlo":"Visibile: tocca per nasconderlo",hid?"g":"p")}</div><div${k==="acc"?"":' style="pointer-events:none"'}>${c||'<p class="mut" style="margin:0">Vuoto in questo momento.</p>'}</div></div>`};
+function vHome(){const{o,h,r}=hCfg(),last=o.length-1;
+  const blk=(k,i)=>{const hid=h.includes(k),rid=r.includes(k),n=HB.find(x=>x[0]===k)[1];if(hid&&!hEd)return"";let c="";try{c=HBK[k]()}catch(e){c=""}
+    if(!hEd){if(!c)return"";if(!rid)return `<div class="card">${c}</div>`;const op=hOpen.has(k);
+      return `<div class="card"><div class="hbody"${op?"":` data-keep="${HKEEP[k]||1}"`}>${c}</div><button class="b g" style="width:100%;padding:2px;margin-top:6px;display:flex;justify-content:center" title="${op?"Riduci":"Mostra tutto"}" aria-label="${op?"Riduci":"Mostra tutto"}" onclick="hTog('${k}')">${ic(op?"chu":"chd",18)}</button></div>`}
+    return `<div class="card"${hid?' style="opacity:.5"':""}><div class="hbar"><b>${n}</b>${i>0?ib("chu","hMv('"+k+"',-1)","Sposta su"):""}${i<last?ib("chd","hMv('"+k+"',1)","Sposta giù"):""}${ib("fold","hRid('"+k+"')",rid?"Parte ridotto: tocca per tenerlo sempre aperto":"Sempre aperto: tocca per farlo partire ridotto",rid?"p":"g")}${ib(hid?"eyeoff":"eye","hEye('"+k+"')",hid?"Nascosto: tocca per mostrarlo":"Visibile: tocca per nasconderlo",hid?"g":"p")}</div><div${k==="acc"?"":' style="pointer-events:none"'}>${c||'<p class="mut" style="margin:0">Vuoto in questo momento.</p>'}</div></div>`};
   $("#v").innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between"><h1>Financial</h1>${ib(hEd?"check":"edit","hEd=!hEd;render()",hEd?"Fine":"Modifica la Home")}</div>
-  ${hEd?`<p class="mut" style="margin:0 0 10px">Sposta i blocchi con le frecce e mostrali o nascondili con l’occhio. La disposizione si sincronizza tra i dispositivi.</p>`:""}
+  ${hEd?`<p class="mut" style="margin:0 0 10px">Sposta i blocchi con le frecce; con il pulsante a righe un blocco parte ridotto (solo la prima riga, si apre con la freccia sotto); con l’occhio lo mostri o lo nascondi. La disposizione si sincronizza tra i dispositivi.</p>`:""}
   <div class="hg">${o.map(blk).join("")}</div>
   ${gOn()?`<div class="card" style="display:flex;align-items:center;gap:10px"><span class="mut" id="sy2" style="flex:1">${esc(gMsg||gName()+" collegato")}</span>${ib(gIc(),"gSync(false)","Sincronizza ora")}</div>`:""}`;
 }
