@@ -622,14 +622,18 @@ const mval=id=>{const e=$("#"+id);if(e.tagName==="INPUT")return e.value;const q=
 let sumOpen=false;
 /* Scelta di più conti in Movimenti: pannello #cbm con caselle; amS = scelta in corso */
 let amS=new Set();
-function amLab(){const l=F.as||(F.a?[F.a]:[]);return !l.length?"tutti i conti":l.length<=2?esc(l.map(an).join(", ")):l.length+" conti"}
+function amLab(){const l=F.as||(F.a?[F.a]:[]);if(l.length>2){const c=l.slice().sort().join(),q=[3,1,2].map(i=>AMQ[i]).find(([k,f])=>S.A.filter(f).map(a=>a.i).sort().join()===c);if(q)return q[0]==="nel totale"?"conti nel totale":"conti "+q[0]}return !l.length?"tutti i conti":l.length<=2?esc(l.map(an).join(", ")):l.length+" conti"}
 function amOpen(){amS=new Set(F.as||(F.a?[F.a]:[]));let m=$("#cbm");if(!m){m=document.createElement("div");m.id="cbm";document.body.appendChild(m)}cbId="am";
-  m.innerHTML=`<div class="cbk" onclick="cbClose()"></div><div class="card cbs"><div class="cr" style="margin:0;align-items:center"><b style="flex:1">Conti</b>${ib("x","cbClose()","Chiudi")}</div><div id="cbl"></div><div class="cr" style="margin:0">${ib("x","amS=new Set();amList()","Nessuno: tutti i conti")}<button class="b p" style="flex:1" onclick="amOk()">Applica</button></div></div>`;m.style.display="block";amList()}
+  m.innerHTML=`<div class="cbk" onclick="cbClose()"></div><div class="card cbs"><div class="cr" style="margin:0;align-items:center"><b style="flex:1">Conti</b>${ib("x","cbClose()","Chiudi")}</div><div class="chips" id="amq" style="flex-wrap:wrap;margin:8px 0"></div><div id="cbl"></div><div class="cr" style="margin:0">${ib("x","amS=new Set();amList()","Nessuno: tutti i conti")}<button class="b p" style="flex:1" onclick="amOk()">Applica</button></div></div>`;m.style.display="block";amList()}
 function amList(){const w=Date.now()-365*864e5,r={};S.T.forEach(t=>{if(t.d>w)[t.a,t.b].forEach(i=>{if(i)r[i]=(r[i]||0)+1})});
   const L=S.A.slice().sort((p,q)=>(q.on?1:0)-(p.on?1:0)||(r[q.i]||0)-(r[p.i]||0)||p.n.localeCompare(q.n,"it"));
-  $("#cbl").innerHTML=L.map(a=>{const on=amS.has(a.i);return `<button class="b g cs${on?" on":""}" style="display:flex;align-items:center;gap:10px" aria-pressed="${on}" onclick="amTog('${a.i}')"><span style="flex:none;width:20px;height:20px;border-radius:5px;border:2px solid ${on?"var(--acc)":"var(--line)"};background:${on?"var(--acc)":"none"};display:inline-flex;align-items:center;justify-content:center;color:var(--acc-ink)">${on?ic("check",12):""}</span><span>${esc(a.n)}${a.on?"":' <small class="mut">(archiviato)</small>'}</span></button>`}).join("")}
+  $("#cbl").innerHTML=L.map(a=>{const on=amS.has(a.i);return `<button class="b g cs${on?" on":""}" style="display:flex;align-items:center;gap:10px" aria-pressed="${on}" onclick="amTog('${a.i}')"><span style="flex:none;width:20px;height:20px;border-radius:5px;border:2px solid ${on?"var(--acc)":"var(--line)"};background:${on?"var(--acc)":"none"};display:inline-flex;align-items:center;justify-content:center;color:var(--acc-ink)">${on?ic("check",12):""}</span><span>${esc(a.n)}${a.on?"":' <small class="mut">(archiviato)</small>'}</span></button>`}).join("");amQRow()}
+// scelte rapide: archiviato = conto spento (on false); "nel totale" = i conti che entrano nel saldo della Home
+const AMQ=[["tutti",a=>true],["attivi",a=>a.on!==false],["archiviati",a=>a.on===false],["nel totale",a=>!!a.tot]];
+function amQ(k){const q=AMQ.find(x=>x[0]===k);if(q)amS=new Set(S.A.filter(q[1]).map(a=>a.i));amList()}
+function amQRow(){const e=$("#amq");if(!e)return;const cur=[...amS].sort().join();e.innerHTML=AMQ.map(([k,f])=>{const on=cur===S.A.filter(f).map(a=>a.i).sort().join();return `<button class="b ${on?"p":"g"} chip" aria-pressed="${on}" onclick="amQ('${k}')">${k}</button>`}).join("")}
 function amTog(i){amS.has(i)?amS.delete(i):amS.add(i);amList()}
-function amOk(){const l=[...amS];cbClose();F.a=l.length===1?l[0]:"";F.as=l.length>1?l:null;F.n=100;render()}
+function amOk(){const l=amS.size===S.A.length?[]:[...amS];cbClose();F.a=l.length===1?l[0]:"";F.as=l.length>1?l:null;F.n=100;render()}
 /* Filtri rapidi di Movimenti, dentro un pannello che si apre con "Filtri": [chiave, etichetta, gruppo esclusivo, attivo?, imposta(on)] */
 let lfOpen=false,lvNew=false,lvOpen=false,loOpen=false;
 const LQ=[["nc","senza categoria","",()=>!!(F.c&&F.c.length===1&&F.c[0]==="-"),on=>{F.c=on?["-"]:null;F.cl=on?"senza categoria":""}],
