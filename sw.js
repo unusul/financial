@@ -1,5 +1,5 @@
 // Cassetto – service worker. Incrementa VERSIONE a ogni aggiornamento dell'app.
-const VERSIONE = "financial-v69";
+const VERSIONE = "financial-v70";
 const BASE = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
 const ESTERNI = [
   "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js",
