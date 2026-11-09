@@ -69,7 +69,7 @@ let S=null;
 try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
 S=S||{A:[],C:[],T:[],D:[],L:{}};S.RC=S.RC||[];S.LN=S.LN||[];S.V=S.V||[];S.P=S.P||[];
 const $=s=>document.querySelector(s);
-const P={tag:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><path d="M7 7h.01"/>',plus:'<path d="M12 5v14M5 12h14"/>',plusc:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',chart:'<path d="M5 20V11M12 20V4M19 20v-6"/>',card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',dots:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',adown:'<path d="M5 12h14"/>',aup:'<path d="M12 5v14M5 12h14"/>',swap:'<path d="M4 8h16M16 4l4 4-4 4M20 16H4M8 12l-4 4 4 4"/>',check:'<path d="M5 12l5 5 9-10"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',fold:'<path d="M4 6h16M4 12h10M4 18h6"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',copy:'<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/>',chd:'<path d="M6 9l6 6 6-6"/>',chl:'<path d="M15 18l-6-6 6-6"/>',chr:'<path d="M9 18l6-6-6-6"/>',chu:'<path d="M18 15l-6-6-6 6"/>',arch:'<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8M10 12h4"/>',rest:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>',dl:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',up:'<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>',merge:'<path d="M6 3v6c0 3 3 5 6 5s6-2 6-5V3M12 14v7"/>',sum:'<path d="M18 5H6l7 7-7 7h12"/>',sumoff:'<path d="M18 5H6l7 7-7 7h12"/><path d="M3 3l18 18"/>',repeat:'<path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/>',checkplus:'<path d="M3 13l4 4 8-9"/><path d="M19 4v6M16 7h6"/>'};
+const P={tag:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><path d="M7 7h.01"/>',plus:'<path d="M12 5v14M5 12h14"/>',minus:'<path d="M5 12h14"/>',plusc:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',chart:'<path d="M5 20V11M12 20V4M19 20v-6"/>',card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',dots:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',adown:'<path d="M5 12h14"/>',aup:'<path d="M12 5v14M5 12h14"/>',swap:'<path d="M4 8h16M16 4l4 4-4 4M20 16H4M8 12l-4 4 4 4"/>',check:'<path d="M5 12l5 5 9-10"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',fold:'<path d="M4 6h16M4 12h10M4 18h6"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',copy:'<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/>',chd:'<path d="M6 9l6 6 6-6"/>',chl:'<path d="M15 18l-6-6 6-6"/>',chr:'<path d="M9 18l6-6-6-6"/>',chu:'<path d="M18 15l-6-6-6 6"/>',arch:'<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8M10 12h4"/>',rest:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>',dl:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',up:'<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>',merge:'<path d="M6 3v6c0 3 3 5 6 5s6-2 6-5V3M12 14v7"/>',sum:'<path d="M18 5H6l7 7-7 7h12"/>',sumoff:'<path d="M18 5H6l7 7-7 7h12"/><path d="M3 3l18 18"/>',repeat:'<path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/>',checkplus:'<path d="M3 13l4 4 8-9"/><path d="M19 4v6M16 7h6"/>'};
 P.eye='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>';P.eyeoff='<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/>';
 const ic=(n,s)=>`<svg viewBox="0 0 24 24" width="${s||22}" height="${s||22}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
 const ib=(n,f,t,c)=>`<button class="b ${c||"g"} ic" title="${t}" aria-label="${t}" onclick="${f}">${ic(n)}</button>`;
@@ -305,9 +305,9 @@ function tcDo(){const o=tpls(true).find(x=>x.k===tcv);if(!o||o.p)return;const n=
 function tcUndo(){const u=S.UN;if(!u)return;u.tx.forEach(r=>{const t=S.T.find(x=>x.i===r.i);if(t&&t.c===u.c){t.c=r.c;if(r.s===undefined)delete t.s;else t.s=r.s}});
   if(u.mk&&!S.T.some(t=>t.c===u.c)&&!S.C.some(c=>c.p===u.c))S.C=S.C.filter(c=>c.i!==u.c);S.UN=null;save();toast("Conversione annullata");render()}
 function tAct(k){if(k[0]==="p"){S.P=S.P.filter(o=>o.k!==k)}else{S.H=S.H||[];const i=S.H.indexOf(k);i<0?S.H.push(k):S.H.splice(i,1)}save();render()}
-function fchips(){const c=[];if(F.c)c.push(["c",F.cl||"Categoria"]);if(F.rep)c.push(["r","report"]);if(F.ids)c.push(["i",F.il||"Movimenti frequenti"]);if(F.as)c.push(["as",F.as.map(an).join(", ")]);if(F.nn)c.push(["nn","senza nota"]);if(F.wn)c.push(["wn","con nota"]);if(F.tr)c.push(["tr",F.tr==="no"?"senza trasferimenti":"solo trasferimenti"]);if(F.k)c.push(["k",F.k==="e"?"solo spese":"solo entrate"]);if(F.xo)c.push(["xo",F.xo==="no"?"senza straordinari":"solo straordinari"]);if(F.ins)c.push(["ins","inseriti qui"]);return c.length?`<div class="chips" style="margin-bottom:12px">${c.map(([k,n])=>`<button class="b g chip" title="Rimuovi filtro" aria-label="Rimuovi filtro ${esc(n)}" onclick="fclr('${k}')">${esc(n)} ${ic("x",16)}</button>`).join("")}</div>`:""}
-function tpGo(k){const o=tpls(true).find(x=>x.k===k);if(!o||o.p)return;F.ids=new Set(tcMatch(o,1).map(t=>t.i));F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.il=(o.kd==="t"?an(o.a)+" → "+an(o.b):path(o.c).split(" › ").pop())+" · "+eur(Math.abs(o.x));F.a="";F.m="";F.y="";F.q="";F.c=null;F.cl="";F.rep=false;F.n=100;tab="list";render()}
-function fclr(k){if(k==="c"){F.c=null;F.cl=""}if(k==="y")F.y="";if(k==="r")F.rep=false;if(k==="i"){F.ids=null;F.il=""}if(k==="as")F.as=null;if(k==="nn")F.nn=false;if(k==="wn")F.wn=false;if(k==="tr")F.tr="";if(k==="k")F.k="";if(k==="xo")F.xo=false;if(k==="ins")F.ins=false;render()}
+function fchips(){const c=[];if(F.c)c.push(["c",F.cl||"Categoria"]);if(F.cx)c.push(["cx","esclusi: "+F.cxl]);if(F.rep)c.push(["r","report"]);if(F.ids)c.push(["i",F.il||"Movimenti frequenti"]);if(F.as)c.push(["as",F.as.map(an).join(", ")]);if(F.nn)c.push(["nn","senza nota"]);if(F.wn)c.push(["wn","con nota"]);if(F.tr)c.push(["tr",F.tr==="no"?"senza trasferimenti":"solo trasferimenti"]);if(F.k)c.push(["k",F.k==="e"?"solo spese":"solo entrate"]);if(F.xo)c.push(["xo",F.xo==="no"?"senza straordinari":"solo straordinari"]);if(F.ins)c.push(["ins","inseriti qui"]);return c.length?`<div class="chips" style="margin-bottom:12px">${c.map(([k,n])=>`<button class="b g chip" title="Rimuovi filtro" aria-label="Rimuovi filtro ${esc(n)}" onclick="fclr('${k}')">${esc(n)} ${ic("x",16)}</button>`).join("")}</div>`:""}
+function tpGo(k){const o=tpls(true).find(x=>x.k===k);if(!o||o.p)return;F.ids=new Set(tcMatch(o,1).map(t=>t.i));F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.il=(o.kd==="t"?an(o.a)+" → "+an(o.b):path(o.c).split(" › ").pop())+" · "+eur(Math.abs(o.x));F.a="";F.m="";F.y="";F.q="";F.c=null;F.cx=null;F.cxl="";F.cl="";F.rep=false;F.n=100;tab="list";render()}
+function fclr(k){if(k==="c"){F.c=null;F.cl=""}if(k==="cx"){F.cx=null;F.cxl=""}if(k==="y")F.y="";if(k==="r")F.rep=false;if(k==="i"){F.ids=null;F.il=""}if(k==="as")F.as=null;if(k==="nn")F.nn=false;if(k==="wn")F.wn=false;if(k==="tr")F.tr="";if(k==="k")F.k="";if(k==="xo")F.xo=false;if(k==="ins")F.ins=false;render()}
 /* Andamento di una categoria: spese ed entrate mese per mese degli ultimi 24 mesi (stessi movimenti del Report), con la media dei mesi chiusi */
 let CT=null;
 function ctOpen(i){const r=RG[i];if(!r)return;CT={c:r.c,l:r.l};render();const e=$("#rct");if(e)e.scrollIntoView({behavior:"smooth",block:"start"})}
@@ -322,7 +322,7 @@ function ctDraw(){const box=$("#rct");if(!box)return;if(!CT){box.style.display="
   ds.push({type:"line",label:"Media "+lab,data:ks.map(()=>avg/100),borderColor:col("--mut"),borderDash:[6,4],pointRadius:0,borderWidth:2,fill:false});
   ch.push(new Chart($("#c6"),{data:{labels:ks.map(k=>k.slice(5)+"/"+k.slice(2,4)),datasets:ds},options:{maintainAspectRatio:false,color:col("--ink"),scales:{x:{ticks:{color:col("--mut"),maxTicksLimit:12}},y:{ticks:{color:col("--mut")},grid:{color:col("--line")}}},
     onHover:(e,el)=>{e.native.target.style.cursor=el.length?"pointer":"default"},onClick:(e,el)=>{if(!el.length)return;R.sc="m";R.m=ks[el[0].index];render();scrollTo(0,0)}}}))}
-function repGo(i){const r=RG[i];if(!r)return;F.c=r.c;F.cl=r.l;F.rep=true;F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.a="";F.q="";F.n=100;F.m=R.sc==="m"?R.m:"";F.y=R.sc==="y"?R.y:"";tab="list";render()}
+function repGo(i){const r=RG[i];if(!r)return;F.c=r.c;F.cl=r.l;F.cx=null;F.cxl="";F.rep=true;F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.a="";F.q="";F.n=100;F.m=R.sc==="m"?R.m:"";F.y=R.sc==="y"?R.y:"";tab="list";render()}
 const mk=d=>loc(d).slice(0,7);
 const msh=k=>new Date(+k.slice(0,4),+k.slice(5)-1,1).toLocaleDateString("it-IT",{month:"short",year:"2-digit"});
 const ml=k=>new Date(+k.slice(0,4),+k.slice(5)-1,1).toLocaleDateString("it-IT",{month:"long",year:"numeric"});
@@ -506,7 +506,7 @@ function qAmt(q){const n=x=>{const v=pn(x);return isNaN(v)?null:Math.round(v*100
   if((m=q.match(/^\s*([\d.,]+)\s*-\s*([\d.,]+)\s*$/))){const a=n(m[1]),b=n(m[2]);return a==null||b==null?null:x=>x>=Math.min(a,b)&&x<=Math.max(a,b)}
   if(/^\s*[\d.,]+\s*€?\s*$/.test(q)&&/\d/.test(q)){const v=n(q.replace("€",""));return v==null?null:a=>a===v}return null}
 function qMatch(t,q){const f=qAmt(q),a=Math.abs(t.b?t.y||t.x:t.x);return f?f(a):(t.n||"").toLowerCase().includes(q)}
-function listGo(){F.q="";F.a="";F.m="";F.y="";F.c=null;F.cl="";F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.rep=false;F.n=100;editId=null;go("list")}
+function listGo(){F.q="";F.a="";F.m="";F.y="";F.c=null;F.cx=null;F.cxl="";F.cl="";F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.rep=false;F.n=100;editId=null;go("list")}
 const hHead=(t,js,tt)=>`<h2 style="cursor:pointer" role="button" title="${tt}" onclick="${js}">${t} <span class="mut">›</span></h2>`;
 const HBK={
   acc:()=>{const l=sortedAcc(),ld={};S.T.forEach(t=>{if(!ld[t.a]||t.d>ld[t.a])ld[t.a]=t.d;if(t.b&&(!ld[t.b]||t.d>ld[t.b]))ld[t.b]=t.d});
@@ -552,7 +552,7 @@ function vHome(){const{o,h,r}=hCfg(),last=o.length-1;
   <div class="hg">${o.map(blk).join("")}</div>
   ${gOn()?`<div class="card" style="display:flex;align-items:center;gap:10px"><span class="mut" id="sy2" style="flex:1">${esc(gMsg||gName()+" collegato")}</span>${ib(gIc(),"gSync(false)","Sincronizza ora")}</div>`:""}`;
 }
-function goAcc(i){F.a=i;F.as=null;F.m="";F.y="";F.q="";F.c=null;F.cl="";F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.rep=false;F.n=100;tab="list";render()}
+function goAcc(i){F.a=i;F.as=null;F.m="";F.y="";F.q="";F.c=null;F.cx=null;F.cxl="";F.cl="";F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.rep=false;F.n=100;tab="list";render()}
 
 /* ---------- Aggiungi / modifica ---------- */
 let xoF=false,ek="e",catTouched=false,pre=null,tpMore=false,tpAll=false,tpK="e",accTouched=false,mgSrc=null,mvSrc=null,catAct=null,rcSrc=null,PT={a:"",r:"12"};
@@ -595,7 +595,7 @@ function saveTx(nw){
   const o={i:editId||uid(),d:d0,a,b,c:$("#f-c").value||null,x:ek==="i"?c:-c,y:ek==="t"?c:0,n:$("#f-n").value.trim(),s:"a",ins:editId?(S.T.find(x=>x.i===editId)||{}).ins:Date.now(),cl:editId?(S.T.find(x=>x.i===editId)||{}).cl:undefined,xo:xoF?1:editId&&(S.T.find(x=>x.i===editId)||{}).xo===0?0:undefined}; // xo: 1 straordinaria, 0 scartata dai suggerimenti
   if(!editId&&rcPend){const r=S.RC.find(x=>x.i===rcPend);if(r){o.rc=r.i;r.next=nxt(r)}}rcPend=null;
   if(editId){S.T[S.T.findIndex(x=>x.i===editId)]=o}else S.T.push(o);
-  S.L={a,c:o.c};editId=null;if(nw){save();toast("Salvato");render();return}F.a=a;F.m=loc(o.d).slice(0,7);F.q="";F.n=100;F.c=null;F.y="";F.rep=false;F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;tab="list";save();toast("Salvato");render();
+  S.L={a,c:o.c};editId=null;if(nw){save();toast("Salvato");render();return}F.a=a;F.m=loc(o.d).slice(0,7);F.q="";F.n=100;F.c=null;F.cx=null;F.cxl="";F.y="";F.rep=false;F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;tab="list";save();toast("Salvato");render();
 }
 function delTx(){uSnap();S.T=S.T.filter(x=>x.i!==editId);S.D.push(editId);editId=null;tab="list";save();uToast("Eliminato");render()}
 function edit(i){editId=i;tab="add";render()}
@@ -637,13 +637,13 @@ const LQ=[["nc","senza categoria","",()=>!!(F.c&&F.c.length===1&&F.c[0]==="-"),o
 function lfT(k){const q=LQ.find(x=>x[0]===k);if(!q)return;const was=q[3]();if(q[2])LQ.filter(x=>x[2]===q[2]).forEach(x=>x[4](false));q[4](!was);F.n=100;render()}
 const LO=[["","più recenti"],["gd","importo più grande"],["ga","importo più piccolo"]];
 // viste salvate di Movimenti: S.P id "lv", l = [{i,n,f}]
-const LVK=["q","a","as","m","y","c","cl","nn","wn","tr","k","xo","ins","o"];
+const LVK=["q","a","as","m","y","c","cl","cx","cxl","nn","wn","tr","k","xo","ins","o"];
 const lvList=()=>(S.P.find(x=>x.i==="lv")||{l:[]}).l||[];
 function lvCur(){const o={};LVK.forEach(k=>{const v=F[k];if(v!=null&&v!==""&&v!==false&&!(Array.isArray(v)&&!v.length))o[k]=v});return o}
 const lvSame=v=>JSON.stringify(lvCur())===JSON.stringify(v.f);
 function lvPut(l){let c=S.P.find(x=>x.i==="lv");if(!c){c={i:"lv"};S.P.push(c)}c.l=l;save();render()}
 function lvAdd(){const n=(($("#lv-n")||{}).value||"").trim();if(!n){toast("Scrivi un nome");return}lvNew=false;lvPut(lvList().concat({i:uid(),n,f:lvCur()}));toast("Vista salvata")}
-function lvGo(i){const v=lvList().find(x=>x.i===i);if(!v)return;LVK.forEach(k=>{F[k]=k in v.f?v.f[k]:(k==="c"||k==="as")?null:(k==="nn"||k==="wn"||k==="xo"||k==="ins")?false:""});F.ids=null;F.rep=false;F.n=100;render()}
+function lvGo(i){const v=lvList().find(x=>x.i===i);if(!v)return;LVK.forEach(k=>{F[k]=k in v.f?v.f[k]:(k==="c"||k==="as"||k==="cx")?null:(k==="nn"||k==="wn"||k==="xo"||k==="ins")?false:""});F.ids=null;F.rep=false;F.n=100;render()}
 function lvDel(i){lvPut(lvList().filter(x=>x.i!==i));toast("Vista eliminata")}
 // riga: Filtri, Viste (n), Ordine e, se i filtri attuali sono una vista salvata, il suo nome; i due pannelli si aprono sotto
 function lfPanel(){const n=LQ.filter(x=>x[3]()).length,V=lvList(),on=V.find(lvSame);
@@ -691,14 +691,18 @@ function vList(){
 function qsRun(){const box=$("#qs"),q=(($("#q")||{}).value||"").trim().toLowerCase();if(!box)return;if(!q){box.innerHTML="";return}
   const cnt={};S.T.forEach(t=>{let c=t.c&&cm[t.c];while(c){cnt[c.i]=(cnt[c.i]||0)+1;c=cm[c.p]}});
   const sw=c=>c.n.toLowerCase().startsWith(q)?1:0,l=S.C.filter(c=>!c.ar&&c.n.toLowerCase().includes(q)).sort((a,b)=>sw(b)-sw(a)||(cnt[b.i]||0)-(cnt[a.i]||0)).slice(0,6);
-  box.innerHTML=l.length?`<div class="card" style="margin:6px 0 0;padding:6px">${l.map(c=>`<div class="cr"><button class="b g cs" onclick="fcPick('${c.i}')">${esc(path(c.i))}</button></div>`).join("")}<p class="mut" style="margin:6px 4px 2px;font-size:12px">Tocca una categoria. Se non ne scegli nessuna, il testo cerca nelle note.</p></div>`:""}
-function fcPick(id){F.c=S.C.filter(c=>{let y=c;while(y){if(y.i===id)return true;y=cm[y.p]}return false}).map(c=>c.i);F.cl=path(id);F.q="";F.n=100;render()}
+  box.innerHTML=l.length?`<div class="card" style="margin:6px 0 0;padding:6px">${l.map(c=>`<div class="cr"><button class="b g cs" style="flex:1" onclick="fcPick('${c.i}')">${esc(path(c.i))}</button>${ib("minus","fcEx('"+c.i+"')","Escludi "+esc(path(c.i)))}</div>`).join("")}<p class="mut" style="margin:6px 4px 2px;font-size:12px">${F.c?"Tocca una categoria per aggiungerla al filtro «"+esc(F.cl)+"».":"Tocca una categoria per vedere solo quella, il segno meno per escluderla. Se non ne scegli nessuna, il testo cerca nelle note."}</p></div>`:""}
+// con una categoria già filtrata, la nuova si aggiunge (con le sottocategorie); la x del filtro le toglie tutte
+const fcSub=id=>S.C.filter(c=>{let y=c;while(y){if(y.i===id)return true;y=cm[y.p]}return false}).map(c=>c.i);
+// esclude la categoria con le sottocategorie; più esclusioni si sommano
+function fcEx(id){const l=fcSub(id);if(F.cx&&l.every(c=>F.cx.includes(c)))return;F.cxl=F.cx?F.cxl+", "+path(id):path(id);F.cx=[...new Set((F.cx||[]).concat(l))];F.q="";F.n=100;render()}
+function fcPick(id){const l=fcSub(id),add=!!F.c&&!l.every(c=>F.c.includes(c));F.cl=add?F.cl+" + "+path(id):F.c&&!add?F.cl:path(id);F.c=F.c?[...new Set(F.c.concat(l))]:l;F.q="";F.n=100;render()}
 
 function lrows(){
   const q=F.q.toLowerCase();
-  const l=S.T.filter(t=>(!F.a||t.a===F.a||t.b===F.a)&&(!F.as||F.as.includes(t.a)||F.as.includes(t.b))&&(!F.m||loc(t.d).slice(0,7)===F.m)&&(!F.y||loc(t.d).slice(0,4)===F.y)&&(!F.c||F.c.includes(t.c||"-"))&&(!F.rep||(!t.b&&(acc(t.a)||{}).tot))&&(!F.ids||F.ids.has(t.i))&&(!F.nn||!(t.n||"").trim())&&(!F.wn||!!(t.n||"").trim())&&(!F.tr||(F.tr==="no"?!t.b:!!t.b))&&(!F.k||(!t.b&&(F.k==="e"?t.x<0:t.x>0)))&&(!F.xo||(F.xo==="no"?t.xo!==1:!!t.xo))&&(!F.ins||t.s==="a")&&(!q||qMatch(t,q))).sort(F.o?((a,b)=>{const v=t=>Math.abs(t.b?t.y||t.x:t.x);return F.o==="gd"?v(b)-v(a):v(a)-v(b)}):(a,b)=>b.d-a.d);
+  const l=S.T.filter(t=>(!F.a||t.a===F.a||t.b===F.a)&&(!F.as||F.as.includes(t.a)||F.as.includes(t.b))&&(!F.m||loc(t.d).slice(0,7)===F.m)&&(!F.y||loc(t.d).slice(0,4)===F.y)&&(!F.c||F.c.includes(t.c||"-"))&&(!F.cx||!F.cx.includes(t.c||"-"))&&(!F.rep||(!t.b&&(acc(t.a)||{}).tot))&&(!F.ids||F.ids.has(t.i))&&(!F.nn||!(t.n||"").trim())&&(!F.wn||!!(t.n||"").trim())&&(!F.tr||(F.tr==="no"?!t.b:!!t.b))&&(!F.k||(!t.b&&(F.k==="e"?t.x<0:t.x>0)))&&(!F.xo||(F.xo==="no"?t.xo!==1:!!t.xo))&&(!F.ins||t.s==="a")&&(!q||qMatch(t,q))).sort(F.o?((a,b)=>{const v=t=>Math.abs(t.b?t.y||t.x:t.x);return F.o==="gd"?v(b)-v(a):v(a)-v(b)}):(a,b)=>b.d-a.d);
   mLast=l.map(t=>t.i);if(msel)msel.forEach(i=>{if(!S.T.some(t=>t.i===i))msel.delete(i)});
-  const flt=!!(F.q||F.a||F.as||F.c||F.ids||F.nn||F.wn||F.tr||F.k||F.xo||F.ins),G={};
+  const flt=!!(F.q||F.a||F.as||F.c||F.cx||F.ids||F.nn||F.wn||F.tr||F.k||F.xo||F.ins),G={};
   if(flt)l.forEach(t=>{const k=t.b?"~t":t.c||"-",g=G[k]||(G[k]={k,n:t.b?"trasferimenti":t.c?path(t.c):"no categoria",v:0,c:0});g.c++;g.v+=t.b?Math.abs(t.y||t.x):t.x});
   const GL=Object.values(G).sort((a,b)=>Math.abs(b.v)-Math.abs(a.v)),rcat=GL.length>1?`<details style="margin:4px 0 8px"><summary class="mut" style="font-size:14px">Per categoria (${GL.length}) ${ic("chd",14)}</summary>${GL.slice(0,15).map(g=>`<div class="sum"${g.k!=="~t"?` role="button" style="cursor:pointer" title="Filtra su questa categoria" onclick="F.c=['${g.k}'];F.cl=${g.k==="-"?"'senza categoria'":"path('"+g.k+"')"};F.n=100;render()"`:""}><span>${esc(g.n)}<small>${g.c} movimenti</small></span><b class="${g.k==="~t"?"":g.v<0?"neg":"pos"}">${eur(g.v)}</b></div>`).join("")}${GL.length>15?`<p class="mut" style="margin:6px 0 0">e altre ${GL.length-15}</p>`:""}</details>`:"";
   const se=l.reduce((s,t)=>s+(!t.b&&t.x<0?t.x:0),0),si=l.reduce((s,t)=>s+(!t.b&&t.x>0?t.x:0),0);
@@ -935,9 +939,9 @@ const MSEC=[["dati","Dati e sincronizzazione"],["fx","Costi fissi"],["ln","Mutui
 function mGo(k){mSec=k;try{localStorage.setItem("cassetto_msec",k)}catch(e){}addP=null;mgSrc=null;lnEd=null;mvSrc=null;catAct=null;xoN=20;render()}
 function vMore(){
   const kids=p=>S.C.filter(c=>(c.p||null)===p).sort((a,b)=>a.n.localeCompare(b.n,"it"));
-  const dk=t=>t.a+"|"+(t.b||"")+"|"+t.x+"|"+loc(t.d).slice(0,10),mf={};S.T.forEach(t=>{if(t.cl)return;(mf[dk(t)]=mf[dk(t)]||{f:[],a:[]})[t.s].push(t)});
+  const dk=t=>t.a+"|"+(t.b||"")+"|"+t.x+"|"+loc(t.d).slice(0,10),mf={};S.T.forEach(t=>{if(t.cl||t.nd)return;(mf[dk(t)]=mf[dk(t)]||{f:[],a:[]})[t.s].push(t)});
   const dups=Object.values(mf).filter(g=>g.f.length&&g.a.length);
-  const dupCard=dups.length?`<div class="card"><h2>Possibili duplicati (${dups.length})</h2><p class="mut">Stesso conto, importo e giorno: uno importato da Financisto e uno inserito qui. Se è lo stesso movimento, elimina quello inserito qui.</p>${dups.slice(0,30).map(g=>rows(g.f.slice(0,1).concat(g.a.slice(0,1)),1)+`<p>${ib("trash","delDup('"+g.a[0].i+"')","Elimina quello inserito qui","d")}</p>`).join("")}</div>`:"";
+  const dupCard=dups.length?`<div class="card"><h2>Possibili duplicati (${dups.length})</h2><p class="mut">Stesso conto, importo e giorno: uno importato da Financisto e uno inserito qui. Se è lo stesso movimento, elimina quello inserito qui; se sono due movimenti diversi, tocca la spunta.</p>${dups.slice(0,30).map(g=>rows(g.f.slice(0,1).concat(g.a.slice(0,1)),1)+`<p class="cr">${ib("trash","delDup('"+g.a[0].i+"')","Elimina quello inserito qui","d")}${ib("check","dupNo('"+g.a[0].i+"')","Non è un duplicato: sono due movimenti diversi")}</p>`).join("")}</div>`:"";
   const addCRow=d=>`<div class="row" style="cursor:default;padding-left:${4+d*20}px"><input id="nc" placeholder="${addP?"Nuova sottocategoria in "+esc(cm[addP].n):"Nuova categoria"}" value="${esc(addPre)}" autocomplete="off" style="flex:1" onkeydown="if(event.key==='Enter')addC()">${ib("check","addC()","Crea","p")}${ib("x","addP=null;render()","Annulla")}</div>`;
   const aqv=()=>aqr.trim().toLowerCase(),acm=c=>c.n.toLowerCase().includes(aqv()),acd=c=>S.C.some(x=>x.p===c.i&&!x.ar&&(acm(x)||acd(x))),aca=c=>{let p=cm[c.p];while(p){if(acm(p))return true;p=cm[p.p]}return false},acv=c=>!c.ar&&(!aqv()||acm(c)||acd(c)||aca(c));
   const tree=(p,d)=>kids(p).filter(acv).map(c=>`<div class="row" style="cursor:default;padding-left:${4+d*20}px"><input value="${esc(c.n)}" onchange="ren('C','${c.i}',this.value)" style="flex:1;min-width:0">${ib("dots","catAct=catAct==='"+c.i+"'?null:'"+c.i+"';mgSrc=null;mvSrc=null;render()",catAct===c.i?"Chiudi le azioni":"Azioni sulla categoria",catAct===c.i?"p":"g")}</div>`
@@ -998,7 +1002,7 @@ function ntCard(){const G={};S.T.forEach(t=>{if(t.b)return;const n=nNorm(t.n);if
   return `<div class="card"><h2>Note ricorrenti (${l.length})</h2><p class="mut">Le note che usi almeno 3 volte funzionano da etichette (persone, progetti, negozi): qui il totale di ciascuna su tutto lo storico, trasferimenti esclusi. Tocca una nota per vedere i suoi movimenti.</p>
   ${l.slice(0,ntN).map((g,k)=>`<div class="row" onclick="ntGo(${k})"><div class="m"><b>${esc(g.n)}</b><small>${g.c} movimenti · dal ${dt(g.f)} al ${dt(g.l)}</small></div><div class="r">${g.e?`<b class="neg">${eur(-g.e)}</b>`:""}${g.i?`<small style="display:block" class="pos">+${eur(g.i)}</small>`:""}</div></div>`).join("")}
   ${l.length>ntN?`<p>${ib("chd","ntN+=40;render()","Mostra altre")}</p>`:""}</div>`}
-function ntGo(k){const g=ntL[k];if(!g)return;F.q=g.n;F.a="";F.m="";F.y="";F.c=null;F.cl="";F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.rep=false;F.n=100;tab="list";render()}
+function ntGo(k){const g=ntL[k];if(!g)return;F.q=g.n;F.a="";F.m="";F.y="";F.c=null;F.cx=null;F.cxl="";F.cl="";F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.rep=false;F.n=100;tab="list";render()}
 /* Trasferimenti mancati: uscita ed entrata dello stesso importo su due conti diversi (nei totali), a non più di 3 giorni,
    nessuna delle due già trasferimento o scartata (t.tn), escluse le coppie con due categorie diverse (spesa e rimborso veri). Per ogni uscita, dalla più recente, l'entrata libera più vicina nel tempo */
 let tmN=30;
@@ -1037,6 +1041,7 @@ const appInfo=()=>cfg(APPV)?"Versione "+esc(APPV)+(cfg(BUILD)?" · build "+esc(B
 function th(v){if(v)document.documentElement.dataset.theme=v;else delete document.documentElement.dataset.theme;render()}
 function addC(){const n=$("#nc").value.trim();if(!n||addP===null)return;if(S.C.some(x=>(x.p||null)===(addP||null)&&x.n.toLowerCase()===n.toLowerCase())){toast("Esiste già");return}S.C.push({i:uid(),n,p:addP||null});if(!addP)aqr="";addP=null;save();render()}
 function delC(i){const used=S.T.some(t=>t.c===i),kid=S.C.some(c=>c.p===i);if(used||kid){toast("Impossibile: categoria in uso o con sottocategorie");return}S.C=S.C.filter(c=>c.i!==i);save();render()}
+function dupNo(i){const t=S.T.find(x=>x.i===i);if(!t)return;uSnap();t.nd=1;save();uToast("Segnato come non duplicato");render()}
 function delDup(i){uSnap();S.T=S.T.filter(x=>x.i!==i);S.D.push(i);save();uToast("Eliminato");render()}
 /* ---------- Privacy: nasconde importi, assi e tooltip dei grafici ---------- */
 function pvApply(){if(!window.Chart||!Chart.defaults)return;const d=Chart.defaults;
