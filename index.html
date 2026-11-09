@@ -506,7 +506,8 @@ function qAmt(q){const n=x=>{const v=pn(x);return isNaN(v)?null:Math.round(v*100
   if((m=q.match(/^\s*([\d.,]+)\s*-\s*([\d.,]+)\s*$/))){const a=n(m[1]),b=n(m[2]);return a==null||b==null?null:x=>x>=Math.min(a,b)&&x<=Math.max(a,b)}
   if(/^\s*[\d.,]+\s*€?\s*$/.test(q)&&/\d/.test(q)){const v=n(q.replace("€",""));return v==null?null:a=>a===v}return null}
 // q intero come importo (25,90 · >100 · 50-80); altrimenti parti separate da virgola in OR, ognuna testo della nota o importo
-const qOne=q=>{const f=qAmt(q);return f?t=>f(Math.abs(t.b?t.y||t.x:t.x)):t=>(t.n||"").toLowerCase().includes(q)};
+// un numero secco (110 · 25,90) trova l’importo oppure lo stesso testo nella nota; >100 e 50-80 solo importi
+const qOne=q=>{const f=qAmt(q),tx=t=>(t.n||"").toLowerCase().includes(q.trim());if(!f)return tx;const am=t=>f(Math.abs(t.b?t.y||t.x:t.x));return /^\s*[\d.,]+\s*€?\s*$/.test(q)?t=>am(t)||tx(t):am};
 let qC={q:null,f:null};
 function qMatch(t,q){if(qC.q!==q){const p=qAmt(q)?[q]:q.split(",").map(x=>x.trim()).filter(Boolean),fs=p.map(qOne);qC={q,f:fs.length>1?t=>fs.some(g=>g(t)):fs[0]||(()=>true)}}return qC.f(t)}
 function listGo(){F.q="";F.a="";F.m="";F.y="";F.df="";F.dt="";F.c=null;F.cx=null;F.cxl="";F.cl="";F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;F.rep=false;F.n=100;editId=null;go("list")}
