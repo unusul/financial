@@ -33,20 +33,33 @@ Firebase console → **Add project** (Analytics not needed).
 
 ## 4. Realtime Database
 1. **Realtime Database** → Create database → location `europe-west1` → **locked mode**.
-2. **Rules** tab: paste these rules and publish (each user can only access `/u/<their uid>`):
+2. Open the published app, **Altro → Sincronizzazione** → cylinder button, and sign in with Google once: this creates
+   your Firebase user. Then **Authentication → Users** → copy your **User UID**.
+3. **Rules** tab: paste these rules with your UID and publish. Only the listed accounts can read or write; anyone else
+   who signs in through the app (or calls the database with the public API key) gets *Permission denied*, so nobody
+   else can fill your database. `d` (the compressed data) is capped at about 2 MB per save.
 
 ```json
 {
   "rules": {
     "u": {
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid"
+        ".read": "auth != null && auth.uid === $uid && $uid === 'YOUR_UID'",
+        ".write": "auth != null && auth.uid === $uid && $uid === 'YOUR_UID'",
+        "d": { ".validate": "newData.isString() && newData.val().length < 2000000" }
       }
     }
   }
 }
 ```
+
+To let another person use the same database, add their UID to both lines: `($uid === 'YOUR_UID' || $uid === 'OTHER_UID')`.
+
+From the command line instead of the console (Node ≥ 20): `npx -y firebase-tools login`, then
+`npx -y firebase-tools auth:export users.json --project <project id>` lists the users with their `localId` (the UID);
+put the rules in `database.rules.json` next to a `firebase.json` containing
+`{ "database": { "rules": "database.rules.json" } }` and run `npx -y firebase-tools deploy --only database --project <project id>`.
+Delete `users.json` afterwards: it contains the accounts' emails.
 
 ## 5. Key restrictions
 Google Cloud → `https://console.cloud.google.com/apis/credentials?project=<Firebase project id>` →
