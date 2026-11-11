@@ -568,12 +568,12 @@ function vAdd(){nIx=null;
   $("#v").innerHTML=`<div class="grid c2"><div><h1>${t?"Modifica movimento":"Nuovo movimento"}</h1>${t?"":dueCard()}<div class="card">
   <div class="seg" id="seg">${[["e","spesa"],["i","entrata"],["t","trasferimento"]].map(([k,n])=>`<button class="${k===ek?"on":""}" title="${n}" aria-label="${n}" onclick="ek='${k}';segset()">${ic({e:"adown",i:"aup",t:"swap"}[k],24)}</button>`).join("")}</div>
   <input id="f-amt" class="amt" inputmode="decimal" placeholder="0,00" value="${amt}" autocomplete="off" style="margin-top:12px">
-  <label>Conto</label><select id="f-a" onchange="accTouched=true;accCh()">${accOpts(a0,0,ek)}</select><div id="f-tp">${t?"":chips(a0)}</div>
+  <div id="f-tp">${t?"":chips(a0)}</div><label>Conto</label><select id="f-a" onchange="accTouched=true;accCh()">${accOpts(a0,0,ek)}</select>
   <div id="f-bw" class="${ek==="t"?"":"hide"}"><label>Verso il conto</label><select id="f-b">${toOpts(a0,b0)}</select></div>
   <div id="f-cw"><label>Categoria</label><input type="hidden" id="f-c" value="${c0||""}"><button class="b g" id="f-cb" onclick="cpOpen()" style="width:100%;text-align:left">${c0?esc(path(c0)):"no categoria"}</button><div id="f-cp" class="card hide" style="max-height:50vh;overflow:auto;margin:6px 0 0"></div></div>
   <label>Data e ora</label><input id="f-d" type="datetime-local" value="${loc(t?t.d:Date.now())}">
   <label>Nota</label><input id="f-n" value="${esc(t?t.n:pr?pr.n:"")}" autocomplete="off" oninput="nsRun()"><div id="f-ns"></div>
-  <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><button class="b ic" style="flex:1;width:auto" title="${t?"Salva modifiche":"Aggiungi"}" aria-label="${t?"Salva modifiche":"Aggiungi"}" onclick="saveTx()">${ic("check",24)}</button>${t?"":`<button class="b g ic" style="flex:1;width:auto" title="Salva e nuovo" aria-label="Salva e nuovo" onclick="saveTx(1)">${ic("checkplus",24)}</button>`+ib("rest","addReset()","Annulla e ricomincia")}${xoBtn()}${t?ib("x","editId=null;tab='list';render()","Annulla")+ib("repeat","mkRc()","Rendi ricorrente (ogni mese)")+ib("trash","delTx()","Elimina","d"):""}</div></div></div>
+  <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><button class="b ic" style="flex:1;width:auto" title="${t?"Salva modifiche":"Aggiungi"}" aria-label="${t?"Salva modifiche":"Aggiungi"}" onclick="saveTx()">${ic("check",24)}</button>${t?"":`<button class="b g ic" style="flex:1;width:auto" title="Salva e nuovo" aria-label="Salva e nuovo" onclick="saveTx(1)">${ic("checkplus",24)}</button>`+ib("rest","addReset()","Annulla e ricomincia")}${xoBtn()}${t?ib("x","editId=null;eReturn()","Annulla")+ib("repeat","mkRc()","Rendi ricorrente (ogni mese)")+ib("trash","delTx()","Elimina","d"):""}</div></div></div>
   </div>`;
   if(!t&&window.matchMedia&&matchMedia("(pointer:fine)").matches)setTimeout(()=>{const e=$("#f-amt");if(e)e.focus()},50); // niente focus sul telefono: non apre la tastiera da sola
 }
@@ -599,10 +599,13 @@ function saveTx(nw){
   const o={i:editId||uid(),d:d0,a,b,c:$("#f-c").value||null,x:ek==="i"?c:-c,y:ek==="t"?c:0,n:$("#f-n").value.trim(),s:"a",ins:editId?(S.T.find(x=>x.i===editId)||{}).ins:Date.now(),cl:editId?(S.T.find(x=>x.i===editId)||{}).cl:undefined,xo:xoF?1:editId&&(S.T.find(x=>x.i===editId)||{}).xo===0?0:undefined}; // xo: 1 straordinaria, 0 scartata dai suggerimenti
   if(!editId&&rcPend){const r=S.RC.find(x=>x.i===rcPend);if(r){o.rc=r.i;r.next=nxt(r)}}rcPend=null;
   if(editId){S.T[S.T.findIndex(x=>x.i===editId)]=o}else S.T.push(o);
-  S.L={a,c:o.c};editId=null;if(nw){save();toast("Salvato");render();return}F.a=a;F.m=loc(o.d).slice(0,7);F.q="";F.n=100;F.c=null;F.cx=null;F.cxl="";F.y="";F.df="";F.dt="";F.rep=false;F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;tab="list";save();toast("Salvato");render();
+  const wasEdit=!!editId;S.L={a,c:o.c};editId=null;if(nw){save();toast("Salvato");render();return}if(wasEdit){save();toast("Salvato");eReturn();return}F.a=a;F.m=loc(o.d).slice(0,7);F.q="";F.n=100;F.c=null;F.cx=null;F.cxl="";F.y="";F.df="";F.dt="";F.rep=false;F.ids=null;F.nn=false;F.wn=false;F.tr="";F.k="";F.xo=false;F.ins=false;F.o="";F.as=null;tab="list";save();toast("Salvato");render();
 }
-function delTx(){uSnap();S.T=S.T.filter(x=>x.i!==editId);S.D.push(editId);editId=null;tab="list";save();uToast("Eliminato");render()}
-function edit(i){editId=i;tab="add";render()}
+function delTx(){uSnap();S.T=S.T.filter(x=>x.i!==editId);S.D.push(editId);editId=null;save();uToast("Eliminato");eReturn()}
+// eBack: da dove si è aperto il movimento; salva, annulla ed elimina tornano lì con filtri e scorrimento invariati
+let eBack=null;
+function edit(i){eBack={tab,y:scrollY};editId=i;tab="add";render()}
+function eReturn(){const b=eBack||{tab:"list",y:0};eBack=null;tab=b.tab==="add"?"list":b.tab;render();setTimeout(()=>scrollTo({top:b.y,behavior:"instant"}),60)}
 // Ultime modifiche: i 50 movimenti con la marca u più recente (modifica o inserimento, anche da un altro dispositivo); gli eliminati non compaiono
 function modCard(){const l=S.T.filter(t=>t.u).sort((p,q)=>q.u-p.u).slice(0,50),when=t=>(t.ins&&Math.abs(t.u-t.ins)<5000?"Inserito ":"Modificato ")+new Date(t.u).toLocaleString("it-IT",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
   return `<div class="card"><h2>Ultime modifiche</h2><p class="mut">Gli ultimi ${l.length} movimenti modificati o inseriti, anche da un altro dispositivo, dal più recente. Tocca un movimento per aprirlo. Gli eliminati non compaiono.</p>${l.map(t=>`<p class="mut" style="margin:12px 0 0;font-size:12px">${when(t)}</p>`+rows([t],true)).join("")||'<p class="mut">Nessuna modifica registrata.</p>'}</div>`}
@@ -636,14 +639,19 @@ function amQRow(){const e=$("#amq");if(!e)return;const cur=[...amS].sort().join(
 function amTog(i){amS.has(i)?amS.delete(i):amS.add(i);amList()}
 function amOk(){const l=amS.size===S.A.length?[]:[...amS];cbClose();F.a=l.length===1?l[0]:"";F.as=l.length>1?l:null;F.n=100;render()}
 /* Filtri rapidi di Movimenti, dentro un pannello che si apre con "Filtri": [chiave, etichetta, gruppo esclusivo, attivo?, imposta(on)] */
-let lfOpen=false,lvNew=false,lvOpen=false,loOpen=false;
+let lfOpen=false,lvNew=false,lvOpen=false;
 const LQ=[["nc","senza categoria","",()=>!!(F.c&&F.c.length===1&&F.c[0]==="-"),on=>{F.c=on?["-"]:null;F.cl=on?"senza categoria":""}],
   ["nn","senza nota","n",()=>!!F.nn,on=>{F.nn=on}],["wn","con nota","n",()=>!!F.wn,on=>{F.wn=on}],
   ["ke","solo spese","k",()=>F.k==="e",on=>{F.k=on?"e":""}],["ki","solo entrate","k",()=>F.k==="i",on=>{F.k=on?"i":""}],
   ["tno","senza trasferimenti","k",()=>F.tr==="no",on=>{F.tr=on?"no":""}],["tsi","solo trasferimenti","k",()=>F.tr==="si",on=>{F.tr=on?"si":""}],
   ["xo","solo straordinari","x",()=>F.xo===true,on=>{F.xo=on}],["xno","senza straordinari","x",()=>F.xo==="no",on=>{F.xo=on?"no":false}],["ins","inseriti qui","",()=>!!F.ins,on=>{F.ins=on}]];
 function lfT(k){const q=LQ.find(x=>x[0]===k);if(!q)return;const was=q[3]();if(q[2])LQ.filter(x=>x[2]===q[2]).forEach(x=>x[4](false));q[4](!was);F.n=100;render()}
-const LO=[["","più recenti"],["gd","importo più grande"],["ga","importo più piccolo"]];
+// F.o: "" data ↓ (più recenti), "da" data ↑, "gd" importo ↓, "ga" importo ↑; il tasto attivo inverte la direzione
+const LO=[["d","Data","","da","dal più recente","dal più vecchio"],["g","Importo","gd","ga","dal più grande","dal più piccolo"]];
+function loT(k){const q=LO.find(x=>x[0]===k),o=F.o||"";F.o=o===q[2]?q[3]:q[2];F.n=100;lrows()}
+P.cal='<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>';
+// simboli: calendario = data, € = importo; freccia solo sul tasto attivo
+const loRow=()=>`<span style="margin-left:auto;display:inline-flex;gap:4px">${LO.map(([k,lb,dn,up,tdn,tup])=>{const o=F.o||"",on=o===dn||o===up,t=on?"Ordinato per "+lb.toLowerCase()+" "+(o===up?tup:tdn)+": tocca per invertire":"Ordina per "+lb.toLowerCase();return `<button class="b ${on?"p":"g"}" style="height:28px;min-width:28px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;gap:2px;font-size:13px;line-height:1" aria-pressed="${on}" title="${t}" aria-label="${t}" onclick="loT('${k}')">${k==="d"?ic("cal",15):"<b>€</b>"}${on?(o===up?"↑":"↓"):""}</button>`}).join("")}</span>`;
 // viste salvate di Movimenti: S.P id "lv", l = [{i,n,f}]
 const LVK=["q","a","as","m","y","df","dt","c","cl","cx","cxl","nn","wn","tr","k","xo","ins","o"];
 const lvList=()=>(S.P.find(x=>x.i==="lv")||{l:[]}).l||[];
@@ -653,15 +661,14 @@ function lvPut(l){let c=S.P.find(x=>x.i==="lv");if(!c){c={i:"lv"};S.P.push(c)}c.
 function lvAdd(){const n=(($("#lv-n")||{}).value||"").trim();if(!n){toast("Scrivi un nome");return}lvNew=false;lvPut(lvList().concat({i:uid(),n,f:lvCur()}));toast("Vista salvata")}
 function lvGo(i){const v=lvList().find(x=>x.i===i);if(!v)return;LVK.forEach(k=>{F[k]=k in v.f?v.f[k]:(k==="c"||k==="as"||k==="cx")?null:(k==="nn"||k==="wn"||k==="xo"||k==="ins")?false:""});F.ids=null;F.rep=false;F.n=100;render()}
 function lvDel(i){lvPut(lvList().filter(x=>x.i!==i));toast("Vista eliminata")}
-// riga: Filtri, Viste (n), Ordine e, se i filtri attuali sono una vista salvata, il suo nome; i due pannelli si aprono sotto
+// riga: Filtri, Viste (n) e, se i filtri attuali sono una vista salvata, il suo nome; i due pannelli si aprono sotto
 function lfPanel(){const n=LQ.filter(x=>x[3]()).length,V=lvList(),on=V.find(lvSame);
   const tg=(o,t,js,c)=>`<button class="b g" style="display:inline-flex;align-items:center;gap:6px${c?";border-color:var(--acc);color:var(--acc)":""}" aria-expanded="${o}" onclick="${js}">${t} ${ic(o?"chu":"chd",16)}</button>`;
-  return `<div class="cr" style="margin:8px 0 0;flex-wrap:wrap">${tg(lfOpen,"Filtri"+(n?" ("+n+")":""),"lfOpen=!lfOpen;render()",n)}${tg(lvOpen,"Viste"+(V.length?" ("+V.length+")":""),"lvOpen=!lvOpen;lvNew=false;render()",0)}${tg(loOpen,"Ordine","loOpen=!loOpen;render()",F.o)}${on?`<button class="b p chip" title="Vista salvata attiva: tocca per togliere i filtri" onclick="listGo()">${esc(on.n)} ${ic("x",14)}</button>`:(Object.keys(lvCur()).length||F.ids||F.rep)?`<button class="b g" style="display:inline-flex;align-items:center;gap:6px" title="Toglie ricerca, conti, date, categoria e filtri" onclick="listGo()">${ic("x",16)} Azzera</button>`:""}</div>
+  return `<div class="cr" style="margin:8px 0 0;flex-wrap:wrap">${tg(lfOpen,"Filtri"+(n?" ("+n+")":""),"lfOpen=!lfOpen;render()",n)}${tg(lvOpen,"Viste"+(V.length?" ("+V.length+")":""),"lvOpen=!lvOpen;lvNew=false;render()",0)}${on?`<button class="b p chip" title="Vista salvata attiva: tocca per togliere i filtri" onclick="listGo()">${esc(on.n)} ${ic("x",14)}</button>`:(Object.keys(lvCur()).length||F.ids||F.rep)?`<button class="b g" style="display:inline-flex;align-items:center;gap:6px" title="Toglie ricerca, conti, date, categoria e filtri" onclick="listGo()">${ic("x",16)} Azzera</button>`:""}</div>
   ${lfOpen?`<div style="margin-top:8px">${[...new Set(LQ.map(x=>x[2]))].map(g=>`<div class="chips" style="flex-wrap:wrap;margin-bottom:6px">${LQ.filter(x=>x[2]===g).map(([k,l,_,a])=>`<button class="b ${a()?"p":"g"} chip" aria-pressed="${a()}" onclick="lfT('${k}')">${l}</button>`).join("")}</div>`).join("")}</div>`:""}
   ${lvOpen?`<div style="margin-top:8px">${V.length?`<div class="chips" style="flex-wrap:wrap">${V.map(v=>`<button class="b ${lvSame(v)?"p":"g"} chip" title="Vista salvata" onclick="lvGo('${v.i}')">${esc(v.n)}</button>`).join("")}</div>`:'<p class="mut" style="margin:0">Nessuna vista salvata.</p>'}
     <div class="cr">${on?ib("trash","lvDel('"+on.i+"')","Elimina la vista "+esc(on.n),"d"):ib("plus","lvNew=!lvNew;render()","Salva questi filtri come vista")}<span class="mut" style="align-self:center">${on?"Vista «"+esc(on.n)+"»: il cestino la elimina":"Salva i filtri attuali con un nome"}</span></div>
-    ${lvNew&&!on?`<div class="cr"><input id="lv-n" placeholder="Nome della vista, es. Da sistemare grossi" autocomplete="off" style="flex:1;min-width:0" onkeydown="if(event.key==='Enter')lvAdd()">${ib("check","lvAdd()","Salva","p")}${ib("x","lvNew=false;render()","Annulla")}</div>`:""}</div>`:""}
-  ${loOpen?`<div class="chips" style="flex-wrap:wrap;margin-top:8px">${LO.map(([k,l])=>`<button class="b ${(F.o||"")===k?"p":"g"} chip" aria-pressed="${(F.o||"")===k}" onclick="F.o='${k}';F.n=100;loOpen=false;render()">${l}</button>`).join("")}</div>`:""}`}
+    ${lvNew&&!on?`<div class="cr"><input id="lv-n" placeholder="Nome della vista, es. Da sistemare grossi" autocomplete="off" style="flex:1;min-width:0" onkeydown="if(event.key==='Enter')lvAdd()">${ib("check","lvAdd()","Salva","p")}${ib("x","lvNew=false;render()","Annulla")}</div>`:""}</div>`:""}`}
 /* Modifica multipla: msel = id selezionati (null = modalità spenta); mLast = ids dell'elenco filtrato; mDel = conferma eliminazione */
 let msel=null,mLast=[],mDel=false;
 function mMode(){msel=msel?null:new Set();mDel=false;lrows()}
@@ -710,7 +717,7 @@ function fcPick(id){const l=fcSub(id),add=!!F.c&&!l.every(c=>F.c.includes(c));F.
 
 function lrows(){
   const q=F.q.toLowerCase();
-  const l=S.T.filter(t=>(!F.a||t.a===F.a||t.b===F.a)&&(!F.as||F.as.includes(t.a)||F.as.includes(t.b))&&(!F.m||loc(t.d).slice(0,7)===F.m)&&(!F.y||loc(t.d).slice(0,4)===F.y)&&(!F.df||loc(t.d).slice(0,10)>=F.df)&&(!F.dt||loc(t.d).slice(0,10)<=F.dt)&&(!F.c||F.c.includes(t.c||"-"))&&(!F.cx||!F.cx.includes(t.c||"-"))&&(!F.rep||(!t.b&&(acc(t.a)||{}).tot))&&(!F.ids||F.ids.has(t.i))&&(!F.nn||!(t.n||"").trim())&&(!F.wn||!!(t.n||"").trim())&&(!F.tr||(F.tr==="no"?!t.b:!!t.b))&&(!F.k||(!t.b&&(F.k==="e"?t.x<0:t.x>0)))&&(!F.xo||(F.xo==="no"?t.xo!==1:!!t.xo))&&(!F.ins||t.s==="a")&&(!q||qMatch(t,q))).sort(F.o?((a,b)=>{const v=t=>Math.abs(t.b?t.y||t.x:t.x);return F.o==="gd"?v(b)-v(a):v(a)-v(b)}):(a,b)=>b.d-a.d);
+  const l=S.T.filter(t=>(!F.a||t.a===F.a||t.b===F.a)&&(!F.as||F.as.includes(t.a)||F.as.includes(t.b))&&(!F.m||loc(t.d).slice(0,7)===F.m)&&(!F.y||loc(t.d).slice(0,4)===F.y)&&(!F.df||loc(t.d).slice(0,10)>=F.df)&&(!F.dt||loc(t.d).slice(0,10)<=F.dt)&&(!F.c||F.c.includes(t.c||"-"))&&(!F.cx||!F.cx.includes(t.c||"-"))&&(!F.rep||(!t.b&&(acc(t.a)||{}).tot))&&(!F.ids||F.ids.has(t.i))&&(!F.nn||!(t.n||"").trim())&&(!F.wn||!!(t.n||"").trim())&&(!F.tr||(F.tr==="no"?!t.b:!!t.b))&&(!F.k||(!t.b&&(F.k==="e"?t.x<0:t.x>0)))&&(!F.xo||(F.xo==="no"?t.xo!==1:!!t.xo))&&(!F.ins||t.s==="a")&&(!q||qMatch(t,q))).sort(F.o==="da"?(a,b)=>a.d-b.d:F.o?((a,b)=>{const v=t=>Math.abs(t.b?t.y||t.x:t.x);return F.o==="gd"?v(b)-v(a):v(a)-v(b)}):(a,b)=>b.d-a.d);
   mLast=l.map(t=>t.i);if(msel)msel.forEach(i=>{if(!S.T.some(t=>t.i===i))msel.delete(i)});
   const flt=!!(F.q||F.a||F.as||F.c||F.cx||F.ids||F.nn||F.wn||F.tr||F.k||F.xo||F.ins),G={};
   if(flt)l.forEach(t=>{const k=t.b?"~t":t.c||"-",g=G[k]||(G[k]={k,n:t.b?"trasferimenti":t.c?path(t.c):"no categoria",v:0,c:0});g.c++;g.v+=t.b?Math.abs(t.y||t.x):t.x});
@@ -718,7 +725,7 @@ function lrows(){
   const se=l.reduce((s,t)=>s+(!t.b&&t.x<0?t.x:0),0),si=l.reduce((s,t)=>s+(!t.b&&t.x>0?t.x:0),0);
   const fa=F.a,ht=!!fa&&l.some(t=>t.b),tr=ht?l.reduce((s,t)=>s+(t.b?(t.a===fa?-Math.abs(t.x):t.b===fa?Math.abs(t.y):0):0),0):0,vr=se+si+tr;
   const tp=(c,v,t)=>`<b class="${c}" title="${t}" onclick="toast(this.title)" style="cursor:help">${eur(v)}</b>`;
-  $("#lr").innerHTML=(msel?mBar():"")+`<div class="sum" style="flex-wrap:wrap"><span class="mut" style="display:flex;align-items:center;gap:6px">${l.length} movimenti${msel?"":ib("checkplus","mMode()","Seleziona più movimenti")}<button class="b g ic sm" title="${sumOpen?'Nascondi il calcolo':'Mostra il calcolo'}" aria-label="${sumOpen?'Nascondi il calcolo':'Mostra il calcolo'}" aria-expanded="${sumOpen}"${sumOpen?' style="color:var(--acc);border-color:var(--acc)"':""} onclick="sumTog()">${ic("info",18)}</button></span>${sumOpen?`<span style="text-align:right;margin-left:auto">${tp("neg",se,"Spese: somma dei movimenti in uscita, esclusi i trasferimenti")} + ${tp("pos",si,"Entrate: somma dei movimenti in entrata, esclusi i trasferimenti")}${ht?` ${tr<0?"−":"+"} ${tp(tr<0?"neg":tr>0?"pos":"",Math.abs(tr),"Trasferimenti: soldi arrivati in questo conto meno soldi usciti verso i tuoi altri conti")}`:""} = ${tp(vr<0?"neg":"pos",vr,ht||fa?"Variazione del saldo del conto nel periodo: spese + entrate ± trasferimenti":"Differenza tra entrate e spese (i trasferimenti tra i tuoi conti si annullano)")}</span>`:""}</div>`+rcat+rows(l.slice(0,F.n),!F.a,F.a)+(l.length>F.n?`<p>${ib("chd","F.n+=200;lrows()","Mostra altri")}</p>`:"")||'<p class="mut">Nessun risultato.</p>';
+  $("#lr").innerHTML=(msel?mBar():"")+`<div class="sum" style="flex-wrap:wrap"><span class="mut" style="display:flex;align-items:center;gap:6px">${l.length} movimenti${msel?"":ib("checkplus","mMode()","Seleziona più movimenti")}<button class="b g ic sm" title="${sumOpen?'Nascondi il calcolo':'Mostra il calcolo'}" aria-label="${sumOpen?'Nascondi il calcolo':'Mostra il calcolo'}" aria-expanded="${sumOpen}"${sumOpen?' style="color:var(--acc);border-color:var(--acc)"':""} onclick="sumTog()">${ic("info",18)}</button></span>${sumOpen?`<span style="text-align:right;margin-left:auto">${tp("neg",se,"Spese: somma dei movimenti in uscita, esclusi i trasferimenti")} + ${tp("pos",si,"Entrate: somma dei movimenti in entrata, esclusi i trasferimenti")}${ht?` ${tr<0?"−":"+"} ${tp(tr<0?"neg":tr>0?"pos":"",Math.abs(tr),"Trasferimenti: soldi arrivati in questo conto meno soldi usciti verso i tuoi altri conti")}`:""} = ${tp(vr<0?"neg":"pos",vr,ht||fa?"Variazione del saldo del conto nel periodo: spese + entrate ± trasferimenti":"Differenza tra entrate e spese (i trasferimenti tra i tuoi conti si annullano)")}</span>`:""}${l.length>1?loRow():""}</div>`+rcat+rows(l.slice(0,F.n),!F.a,F.a)+(l.length>F.n?`<p>${ib("chd","F.n+=200;lrows()","Mostra altri")}</p>`:"")||'<p class="mut">Nessun risultato.</p>';
 }
 
 /* ---------- Report ---------- */
@@ -949,7 +956,7 @@ const MSEC=[["dati","Dati e sincronizzazione"],["fx","Costi fissi"],["ln","Mutui
 function mGo(k){mSec=k;try{localStorage.setItem("cassetto_msec",k)}catch(e){}addP=null;mgSrc=null;lnEd=null;mvSrc=null;catAct=null;xoN=20;render()}
 function vMore(){
   const kids=p=>S.C.filter(c=>(c.p||null)===p).sort((a,b)=>a.n.localeCompare(b.n,"it"));
-  const dk=t=>t.a+"|"+(t.b||"")+"|"+t.x+"|"+loc(t.d).slice(0,10),mf={};S.T.forEach(t=>{if(t.cl||t.nd)return;(mf[dk(t)]=mf[dk(t)]||{f:[],a:[]})[t.s].push(t)});
+  const dk=t=>t.a+"|"+(t.b||"")+"|"+t.x+"|"+loc(t.d).slice(0,10),mf={};S.T.forEach(t=>{if(t.cl||t.nd)return;(mf[dk(t)]=mf[dk(t)]||{f:[],a:[]})[t.ins?"a":"f"].push(t)}); // inserito qui = ha ins; s "a" vale anche per gli importati modificati qui
   const dups=Object.values(mf).filter(g=>g.f.length&&g.a.length);
   const dupCard=dups.length?`<div class="card"><h2>Possibili duplicati (${dups.length})</h2><p class="mut">Stesso conto, importo e giorno: uno importato da Financisto e uno inserito qui. Se è lo stesso movimento, elimina quello inserito qui; se sono due movimenti diversi, tocca la spunta.</p>${dups.slice(0,30).map(g=>rows(g.f.slice(0,1).concat(g.a.slice(0,1)),1)+`<p class="cr">${ib("trash","delDup('"+g.a[0].i+"')","Elimina quello inserito qui","d")}${ib("check","dupNo('"+g.a[0].i+"')","Non è un duplicato: sono due movimenti diversi")}</p>`).join("")}</div>`:"";
   const addCRow=d=>`<div class="row" style="cursor:default;padding-left:${4+d*20}px"><input id="nc" placeholder="${addP?"Nuova sottocategoria in "+esc(cm[addP].n):"Nuova categoria"}" value="${esc(addPre)}" autocomplete="off" style="flex:1" onkeydown="if(event.key==='Enter')addC()">${ib("check","addC()","Crea","p")}${ib("x","addP=null;render()","Annulla")}</div>`;
