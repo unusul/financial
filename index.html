@@ -39,6 +39,8 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px 4px;border-bottom:1p
 #rt table,#ryr table,#rytd table{table-layout:fixed}#ryr td:first-child,#ryr th:first-child,#rytd td:first-child,#rytd th:first-child{width:30%}#rt td:first-child,#rt th:first-child{width:40%}#rt .rbtn{width:92px;white-space:nowrap}.dsub{display:block;font-size:12px;margin-top:2px;font-weight:600}.dcol{display:none}@media (min-width:700px){.dsub{display:none}.dcol{display:table-cell}}
 details>summary{cursor:pointer;list-style:none}details .sub td:first-child{padding-left:22px;color:var(--mut)}
 .cv{position:relative;height:260px}
+.fab{position:fixed;right:16px;bottom:calc(76px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:16px;border:0;background:var(--acc);color:var(--acc-ink);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.28);cursor:pointer;z-index:6}
+.fab:active{transform:scale(.96)}
 #toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:20px;font-weight:600;display:none;z-index:9}
 button.b.sm{padding:6px 10px;font-size:13px}button.b.ic{padding:0;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;flex:none}button.b.ic.sm{width:36px;height:36px}.fb{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:8px;background:var(--acc);color:var(--acc-ink);cursor:pointer;flex:none;margin:0}.fb input{position:absolute;inset:0;width:100%;height:100%;opacity:0;padding:0;border:0;cursor:pointer}nav button svg,.seg button svg{display:block;margin:0 auto}.cr{display:flex;gap:6px;margin:4px 0}button.b.cs{flex:1;text-align:left}button.b.cs.on{border-color:var(--acc);color:var(--acc)}.cbx{display:block;flex:1;min-width:0}.cbb{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left}button.b.g.cbb{background:var(--bg);font-weight:400;padding:10px}.cbb>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#cbm{display:none;position:fixed;inset:0;z-index:60}.cbk{position:absolute;inset:0;background:#0009}.cbs{position:absolute;left:50%;top:8vh;transform:translateX(-50%);width:min(520px,92vw);max-height:78vh;display:flex;flex-direction:column;gap:8px;margin:0}#cbl{overflow:auto;display:flex;flex-direction:column;gap:4px}button.b.cx{width:48px}.cr .cx{width:48px;flex:none;padding:0;display:inline-flex;align-items:center;justify-content:center}.scr{max-height:calc(var(--rows)*65px);overflow-y:auto}.chips{display:flex;flex-wrap:wrap;gap:8px}button.b.chip{white-space:nowrap;flex:none}
 .hide{display:none!important}
@@ -47,7 +49,8 @@ nav{top:0;bottom:auto;right:auto;width:72px;flex-direction:column;border-top:0;b
 nav button{padding:16px 0}nav button.on{box-shadow:inset 3px 0 var(--acc)}
 main{margin-left:72px;max-width:none;padding:28px 36px 40px}.wrap{max-width:1100px}
 .grid.c2{grid-template-columns:minmax(320px,420px) 1fr;align-items:start}.grid.c3{grid-template-columns:repeat(2,minmax(0,1fr))}
-#toast{bottom:24px}}
+#toast{bottom:24px}
+.fab{right:24px;bottom:24px}}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f766e">
@@ -606,6 +609,9 @@ function saveTx(nw){
 function delTx(){uSnap();S.T=S.T.filter(x=>x.i!==editId);S.D.push(editId);editId=null;save();uToast("Eliminato");eReturn()}
 // eBack: da dove si è aperto il movimento; salva, annulla ed elimina tornano lì con filtri e scorrimento invariati
 let eBack=null;
+// + in Movimenti: il conto filtrato (uno solo, anche scelto nella finestra Conti) diventa il conto del nuovo movimento
+const fabAcc=()=>F.a||(F.as&&F.as.length===1?F.as[0]:"");
+function fabAdd(){const a=fabAcc();editId=null;if(a&&S.A.some(x=>x.i===a)){ek="e";pre={k:"e",a,b:defTo(a),c:defCat(a,"e"),amt:"",n:""}}go("add")}
 function edit(i){eBack={tab,y:scrollY};editId=i;tab="add";render()}
 function eReturn(){const b=eBack||{tab:"list",y:0};eBack=null;tab=b.tab==="add"?"list":b.tab;render();setTimeout(()=>scrollTo({top:b.y,behavior:"instant"}),60)}
 // Ultime modifiche: i 50 movimenti con la marca u più recente (modifica o inserimento, anche da un altro dispositivo); gli eliminati non compaiono
@@ -698,7 +704,7 @@ function vList(){
   const yrs=[...new Set(S.T.map(t=>loc(t.d).slice(0,4)))].sort().reverse(),pm=F.m?"m":F.y?"y":(F.df||F.dt)?"r":"t",fx="flex:1;min-width:0";
   $("#v").innerHTML=`<h1>${F.a?esc(an(F.a)):"Movimenti"}</h1>${F.a?`<p class="mut" style="margin:-6px 0 12px">Saldo <b class="${bal(F.a)<0?"neg":""}">${eur(bal(F.a))}</b></p>`:""}${fchips()}<div class="card"><label style="margin-top:0">Cerca</label><input id="q" value="${esc(F.q)}" placeholder="categoria, nota o importo (25,90 · >100 · 50-80 · cucina, porte)" autocomplete="off"><div id="qs"></div>${lfPanel()}
   <label>Data</label><div style="display:flex;gap:10px"><select id="fp" style="${fx}">${[["t","tutto"],["m","mese"],["y","anno"],["r","dal… al…"]].map(([k,n])=>`<option value="${k}"${pm===k?" selected":""}>${n}</option>`).join("")}</select>${pm==="r"?`<input id="fdf" type="date" value="${F.df}" aria-label="Dal" style="${fx}"><input id="fdt" type="date" value="${F.dt}" aria-label="Al" style="${fx}">`:pm==="m"?`${mpick("m",F.m,fx)}`:pm==="y"?`<select id="fy" style="${fx}">${yrs.map(y=>`<option${y===F.y?" selected":""}>${y}</option>`).join("")}</select>`:""}</div>
-  <label>Conto</label><button type="button" class="b g cbb" onclick="amOpen()"><span>${amLab()}</span>${ic("chd",16)}</button></div><div class="card" id="lr"></div>`;
+  <label>Conto</label><button type="button" class="b g cbb" onclick="amOpen()"><span>${amLab()}</span>${ic("chd",16)}</button></div><div class="card" id="lr"></div><div style="height:72px"></div>${(()=>{const a=fabAcc();return `<button class="fab" title="${a?"Nuovo movimento su "+esc(an(a)):"Nuovo movimento"}" aria-label="${a?"Nuovo movimento su "+esc(an(a)):"Nuovo movimento"}" onclick="fabAdd()">${ic("plus",28)}</button>`})()}`;
   $("#q").oninput=()=>{F.q=$("#q").value;F.n=100;qsRun();lrows()};
   $("#fp").onchange=e=>{const v=e.target.value,now=loc(Date.now());F.m=v==="m"?(F.m||now.slice(0,7)):"";F.y=v==="y"?(F.y||yrs[0]||now.slice(0,4)):"";F.df=v==="r"?(F.df||loc(addM(Date.now(),-3)).slice(0,10)):"";F.dt=v==="r"?(F.dt||now.slice(0,10)):"";F.n=100;render()};
   // dal… al…: date invertite si scambiano; una data vuota lascia l'intervallo aperto da quel lato
