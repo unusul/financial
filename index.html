@@ -18,7 +18,8 @@ body{margin:0;min-height:100%;overscroll-behavior-x:none;background:var(--bg);co
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
 nav button{flex:1;border:0;background:none;color:var(--mut);font:600 13px Figtree,system-ui,sans-serif;padding:14px 4px;cursor:pointer}
 nav button.on{color:var(--acc);box-shadow:inset 0 3px var(--acc)}
-main{max-width:1100px;margin:0 auto;padding:16px 14px 96px}
+nav button.nadd{display:none}
+main{max-width:1100px;margin:0 auto;padding:16px 14px 150px}
 h1{font-size:22px;margin:4px 0 14px}h2{font-size:17px;margin:0 0 10px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}#v{touch-action:pan-y}.hg{margin-bottom:14px}.hg>.card{break-inside:avoid;margin:0 0 14px}.hg h2 .mut{font-weight:400}.hbar{display:flex;align-items:center;gap:6px;margin:-4px 0 10px}.hbar b{flex:1;font-size:15px}@media (min-width:900px){.hg{columns:2;column-gap:14px}}
 label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
@@ -46,11 +47,11 @@ button.b.sm{padding:6px 10px;font-size:13px}button.b.ic{padding:0;width:44px;hei
 .hide{display:none!important}
 @media (min-width:900px){
 nav{top:0;bottom:auto;right:auto;width:72px;flex-direction:column;border-top:0;border-right:1px solid var(--line);padding:24px 0}
-nav button{padding:16px 0}nav button.on{box-shadow:inset 3px 0 var(--acc)}
+nav button{padding:16px 0}nav button.on{box-shadow:inset 3px 0 var(--acc)}nav button.nadd{display:block}
 main{margin-left:72px;max-width:none;padding:28px 36px 40px}.wrap{max-width:1100px}
 .grid.c2{grid-template-columns:minmax(320px,420px) 1fr;align-items:start}.grid.c3{grid-template-columns:repeat(2,minmax(0,1fr))}
 #toast{bottom:24px}
-.fab{right:24px;bottom:24px}}
+/* computer: subito a destra del contenuto (#v.wrap parte a 108px, largo al massimo 1100px), mai oltre il bordo */.fab{right:auto;left:min(1224px,calc(100vw - 80px));bottom:24px}.fab:not(.lst){display:none}}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f766e">
@@ -474,9 +475,9 @@ let lt=null;
 let lsc="";
 function render(){const y0=window.scrollY,sk=tab+"|"+(tab==="more"?mSec:""),s0=[...document.querySelectorAll(".scr")].map(e=>e.scrollTop);pvApply();
   cm={};S.C.forEach(c=>cm[c.i]=c);
-  $("#nav").innerHTML=tabs.map(([k,n,i])=>`<button class="${k===tab?"on":""}" title="${n}" aria-label="${n}" onclick="go('${k}')">${ic(i,24)}</button>`).join("")+`<button title="${PV?"Mostra i valori":"Nascondi i valori"}" aria-label="${PV?"Mostra i valori":"Nascondi i valori"}"${PV?` style="color:var(--acc)"`:""} onclick="pvTog()">${ic(PV?"eyeoff":"eye",24)}</button>`;
+  $("#nav").innerHTML=tabs.map(([k,n,i])=>`<button class="${k===tab?"on":""}${k==="add"?" nadd":""}" title="${n}" aria-label="${n}" onclick="go('${k}')">${ic(i,24)}</button>`).join("")+`<button title="${PV?"Mostra i valori":"Nascondi i valori"}" aria-label="${PV?"Mostra i valori":"Nascondi i valori"}"${PV?` style="color:var(--acc)"`:""} onclick="pvTog()">${ic(PV?"eyeoff":"eye",24)}</button>`;
   ch.forEach(c=>c.destroy());ch=[];
-  ({home:vHome,add:vAdd,list:vList,rep:vRep,acc:vAcc,more:vMore})[tab]();
+  ({home:vHome,add:vAdd,list:vList,rep:vRep,acc:vAcc,more:vMore})[tab]();fabSync();
   if(tab==="acc")ptDraw();if(tab==="rep")ctDraw();if(tab==="home"){document.querySelectorAll("[data-keep]").forEach(b=>[...b.children].forEach((e,i)=>{if(i>=+b.dataset.keep)e.style.display="none"}));ptMini();m12Draw()}
   window.scrollTo(0,lt===tab?y0:0);lt=tab;
   if(lsc===sk)document.querySelectorAll(".scr").forEach((e,k)=>{if(s0[k])e.scrollTop=s0[k]});lsc=sk;
@@ -610,7 +611,10 @@ function delTx(){uSnap();S.T=S.T.filter(x=>x.i!==editId);S.D.push(editId);editId
 // eBack: da dove si è aperto il movimento; salva, annulla ed elimina tornano lì con filtri e scorrimento invariati
 let eBack=null;
 // + in Movimenti: il conto filtrato (uno solo, anche scelto nella finestra Conti) diventa il conto del nuovo movimento
-const fabAcc=()=>F.a||(F.as&&F.as.length===1?F.as[0]:"");
+const fabAcc=()=>tab!=="list"?"":F.a||(F.as&&F.as.length===1?F.as[0]:"");
+// un solo tasto per tutta l'app, fuori da #v; nascosto in Aggiungi; .lst = in Movimenti (sul computer resta solo lì)
+function fabSync(){let b=$("#fab");if(!b){b=document.createElement("button");b.id="fab";b.onclick=()=>fabAdd();document.body.appendChild(b)}
+  const a=fabAcc(),t=a?"Nuovo movimento su "+an(a):"Nuovo movimento";b.className="fab"+(tab==="list"?" lst":"");b.style.display=tab==="add"?"none":"";b.title=t;b.setAttribute("aria-label",t);if(!b.firstChild)b.innerHTML=ic("plus",28)}
 function fabAdd(){const a=fabAcc();editId=null;if(a&&S.A.some(x=>x.i===a)){ek="e";pre={k:"e",a,b:defTo(a),c:defCat(a,"e"),amt:"",n:""}}go("add")}
 function edit(i){eBack={tab,y:scrollY};editId=i;tab="add";render()}
 function eReturn(){const b=eBack||{tab:"list",y:0};eBack=null;tab=b.tab==="add"?"list":b.tab;render();setTimeout(()=>scrollTo({top:b.y,behavior:"instant"}),60)}
@@ -704,7 +708,7 @@ function vList(){
   const yrs=[...new Set(S.T.map(t=>loc(t.d).slice(0,4)))].sort().reverse(),pm=F.m?"m":F.y?"y":(F.df||F.dt)?"r":"t",fx="flex:1;min-width:0";
   $("#v").innerHTML=`<h1>${F.a?esc(an(F.a)):"Movimenti"}</h1>${F.a?`<p class="mut" style="margin:-6px 0 12px">Saldo <b class="${bal(F.a)<0?"neg":""}">${eur(bal(F.a))}</b></p>`:""}${fchips()}<div class="card"><label style="margin-top:0">Cerca</label><input id="q" value="${esc(F.q)}" placeholder="categoria, nota o importo (25,90 · >100 · 50-80 · cucina, porte)" autocomplete="off"><div id="qs"></div>${lfPanel()}
   <label>Data</label><div style="display:flex;gap:10px"><select id="fp" style="${fx}">${[["t","tutto"],["m","mese"],["y","anno"],["r","dal… al…"]].map(([k,n])=>`<option value="${k}"${pm===k?" selected":""}>${n}</option>`).join("")}</select>${pm==="r"?`<input id="fdf" type="date" value="${F.df}" aria-label="Dal" style="${fx}"><input id="fdt" type="date" value="${F.dt}" aria-label="Al" style="${fx}">`:pm==="m"?`${mpick("m",F.m,fx)}`:pm==="y"?`<select id="fy" style="${fx}">${yrs.map(y=>`<option${y===F.y?" selected":""}>${y}</option>`).join("")}</select>`:""}</div>
-  <label>Conto</label><button type="button" class="b g cbb" onclick="amOpen()"><span>${amLab()}</span>${ic("chd",16)}</button></div><div class="card" id="lr"></div><div style="height:72px"></div>${(()=>{const a=fabAcc();return `<button class="fab" title="${a?"Nuovo movimento su "+esc(an(a)):"Nuovo movimento"}" aria-label="${a?"Nuovo movimento su "+esc(an(a)):"Nuovo movimento"}" onclick="fabAdd()">${ic("plus",28)}</button>`})()}`;
+  <label>Conto</label><button type="button" class="b g cbb" onclick="amOpen()"><span>${amLab()}</span>${ic("chd",16)}</button></div><div class="card" id="lr"></div><div style="height:72px"></div>`;
   $("#q").oninput=()=>{F.q=$("#q").value;F.n=100;qsRun();lrows()};
   $("#fp").onchange=e=>{const v=e.target.value,now=loc(Date.now());F.m=v==="m"?(F.m||now.slice(0,7)):"";F.y=v==="y"?(F.y||yrs[0]||now.slice(0,4)):"";F.df=v==="r"?(F.df||loc(addM(Date.now(),-3)).slice(0,10)):"";F.dt=v==="r"?(F.dt||now.slice(0,10)):"";F.n=100;render()};
   // dal… al…: date invertite si scambiano; una data vuota lascia l'intervallo aperto da quel lato
