@@ -477,7 +477,7 @@ function render(){const y0=window.scrollY,sk=tab+"|"+(tab==="more"?mSec:""),s0=[
   cm={};S.C.forEach(c=>cm[c.i]=c);
   $("#nav").innerHTML=tabs.map(([k,n,i])=>`<button class="${k===tab?"on":""}${k==="add"?" nadd":""}" title="${n}" aria-label="${n}" onclick="go('${k}')">${ic(i,24)}</button>`).join("")+`<button title="${PV?"Mostra i valori":"Nascondi i valori"}" aria-label="${PV?"Mostra i valori":"Nascondi i valori"}"${PV?` style="color:var(--acc)"`:""} onclick="pvTog()">${ic(PV?"eyeoff":"eye",24)}</button>`;
   ch.forEach(c=>c.destroy());ch=[];
-  ({home:vHome,add:vAdd,list:vList,rep:vRep,acc:vAcc,more:vMore})[tab]();fabSync();
+  ({home:vHome,add:vAdd,list:vList,rep:vRep,acc:vAcc,more:vMore})[tab]();fabSync();tcSync();
   if(tab==="acc")ptDraw();if(tab==="rep")ctDraw();if(tab==="home"){document.querySelectorAll("[data-keep]").forEach(b=>[...b.children].forEach((e,i)=>{if(i>=+b.dataset.keep)e.style.display="none"}));ptMini();m12Draw()}
   window.scrollTo(0,lt===tab?y0:0);lt=tab;
   if(lsc===sk)document.querySelectorAll(".scr").forEach((e,k)=>{if(s0[k])e.scrollTop=s0[k]});lsc=sk;
@@ -613,6 +613,8 @@ let eBack=null;
 // + in Movimenti: il conto filtrato (uno solo, anche scelto nella finestra Conti) diventa il conto del nuovo movimento
 const fabAcc=()=>tab!=="list"?"":F.a||(F.as&&F.as.length===1?F.as[0]:"");
 // un solo tasto per tutta l'app, fuori da #v; nascosto in Aggiungi; .lst = in Movimenti (sul computer resta solo lì)
+function tcSync(){if(typeof getComputedStyle!=="function")return;const m=document.querySelector("meta[name=theme-color]"),c=getComputedStyle(document.documentElement).getPropertyValue("--card").trim();if(m&&c&&m.content!==c)m.content=c}
+if(typeof matchMedia==="function")matchMedia("(prefers-color-scheme:dark)").addEventListener("change",tcSync);
 function fabSync(){let b=$("#fab");if(!b){b=document.createElement("button");b.id="fab";b.onclick=()=>fabAdd();document.body.appendChild(b)}
   const a=fabAcc(),t=a?"Nuovo movimento su "+an(a):"Nuovo movimento";b.className="fab"+(tab==="list"?" lst":"");b.style.display=tab==="add"?"none":"";b.title=t;b.setAttribute("aria-label",t);if(!b.firstChild)b.innerHTML=ic("plus",28)}
 function fabAdd(){const a=fabAcc();editId=null;if(a&&S.A.some(x=>x.i===a)){ek="e";pre={k:"e",a,b:defTo(a),c:defCat(a,"e"),amt:"",n:""}}go("add")}
